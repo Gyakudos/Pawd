@@ -84,6 +84,7 @@ CONTROLLER_TERMS = (
     "switch pro", "joy-con", "joycon", "nintendo", "gamepad", "game pad",
     "joystick", "flight stick", "racing wheel", "steering wheel",
     "game controller", "wireless controller", "hid-compliant game",
+    "powered a rechargeable", "powera", "power a",
 )
 CONTROLLER_EXCLUDE = (
     "system controller", "host controller", "bus", "virtual", "synthetic",
@@ -268,6 +269,9 @@ def controller_live_state(index: int, source: str = "auto") -> dict:
     if source in ("auto", "dinput") and di.get("available"):
         state = dinput_api.read_state(index) if dinput_api else None
         if state is not None:
+            if state.get("deviceName"):
+                state = dict(state)
+                state["deviceName"] = display_name({"name": state["deviceName"]})
             return {**base, "available": True, "source": "dinput", "state": state}
 
     return {
@@ -400,6 +404,24 @@ def device_ids(dev: dict) -> tuple[str | None, str | None]:
             pid.group(1).upper() if pid else None)
 
 
+# Friendly names shown in Pawd for devices whose Windows name is generic or
+# unhelpful. Keyed by (VID, PID) so it is stable across reconnections.
+DISPLAY_NAMES = {
+    ("20D6", "0002"): "Powered A Rechargeable",
+}
+
+
+def display_name(dev: dict) -> str:
+    vid, pid = device_ids(dev)
+    override = DISPLAY_NAMES.get((vid, pid))
+    if override:
+        return override
+    text = " ".join([str(dev.get("name") or ""), str(dev.get("instanceId") or "")]).lower()
+    if "nsw enhanced wireless" in text or "powera" in text or "power a" in text:
+        return "Powered A Rechargeable"
+    return str(dev.get("name") or "Unknown device")
+
+
 def controller_family(dev: dict) -> str:
     vid, _ = device_ids(dev)
     text = " ".join([
@@ -411,7 +433,9 @@ def controller_family(dev: dict) -> str:
         return "xbox"
     if vid == "054C" or any(t in text for t in ("dualsense", "dualshock", "playstation", "ps4", "ps5")):
         return "playstation"
-    if vid == "057E" or any(t in text for t in ("nintendo", "switch pro", "joy-con", "joycon")):
+    if (vid == "057E" or vid == "20D6" or
+            any(t in text for t in ("nintendo", "switch pro", "joy-con", "joycon",
+                                    "powera", "power a", "powered a rechargeable"))):
         return "nintendo"
     if any(t in text for t in ("racing wheel", "steering wheel", "flight stick")):
         return "specialty"
@@ -537,7 +561,7 @@ def collect_devices() -> dict:
     enriched = []
     for d in devices:
         kind = classify_device(d)
-        enriched.append({**d, "kind": kind})
+        enriched.append({**d, "kind": kind, "name": display_name(d)})
     android_like = [d for d in enriched if d.get("kind") == "android"]
     controllers = [d for d in enriched if d.get("kind") == "controller"]
     adb = adb_status()
@@ -573,6 +597,7 @@ def controller_status() -> dict:
         vid, pid = device_ids(d)
         controllers.append({
             **d,
+            "name": display_name(d),
             "family": controller_family(d),
             "vid": vid,
             "pid": pid,

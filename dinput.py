@@ -93,6 +93,12 @@ def _is_dualsense(name: str) -> bool:
     return "DUALSENSE" in upper or ("054C" in upper and "0CE6" in upper)
 
 
+def _is_powera_rechargeable(name: str) -> bool:
+    upper = name.upper()
+    return ("NSW ENHANCED WIRELESS" in upper or "POWERA" in upper or
+            "POWER A" in upper or "POWERED A RECHARGEABLE" in upper)
+
+
 def default_button_map(name: str = "") -> dict[str, int]:
     if "GC300" in name.upper():
         layout = GC300_BUTTON_NAMES
@@ -104,14 +110,15 @@ def default_button_map(name: str = "") -> dict[str, int]:
 
 
 def default_axis_map(name: str = "") -> dict[str, dict]:
-    source = DUALSENSE_AXES if _is_dualsense(name) else DEFAULT_AXES
+    sony_style = _is_dualsense(name) or _is_powera_rechargeable(name)
+    source = DUALSENSE_AXES if sony_style else DEFAULT_AXES
     return {key: dict(cfg) for key, cfg in source.items()}
 
 
 def default_trigger_map(name: str = "") -> dict[str, dict]:
     if "GC300" in name.upper():
         return dict(GC300_TRIGGERS)
-    if _is_dualsense(name):
+    if _is_dualsense(name) or _is_powera_rechargeable(name):
         return dict(DUALSENSE_TRIGGERS)
     return dict(DEFAULT_TRIGGERS)
 
