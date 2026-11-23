@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pawd Self Test</string>
+    <string name="test_touch">Touchscreen</string>
+    <string name="test_display">Display</string>
+    <string name="test_audio">Speaker &amp; Microphone</string>
+    <string name="test_camera">Camera</string>
+    <string name="test_biometric">Biometrics</string>
+    <string name="test_sensors">Sensors</string>
+    <string name="test_vibration">Vibration</string>
+    <string name="test_buttons">Buttons &amp; Keys</string>
+    <string name="test_location">Location</string>
+    <string name="test_system">System Info</string>
+</resources>

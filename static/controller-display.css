@@ -1,0 +1,69 @@
+body { padding-bottom: 20px; }
+
+.display-header {
+  max-width: 1200px; margin: 0 auto; padding: 18px 20px 6px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.display-header h1 { margin: 0 0 4px; font-size: 1.6rem; color: var(--accent); }
+.display-header p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+.display-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.display-tools select {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
+}
+.link-button {
+  color: var(--accent); text-decoration: none; font-size: 0.85rem;
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
+}
+.link-button:hover { border-color: var(--accent); }
+
+.detected-list { display: flex; gap: 10px; flex-wrap: wrap; }
+.detected-chip {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--panel-2); font-size: 0.82rem;
+}
+.detected-chip strong { color: var(--text); }
+.detected-chip span { color: var(--muted); font-size: 0.75rem; }
+
+.display-panel { padding: 20px 24px; }
+.display-panel h2 { margin: 0; font-size: 1.15rem; }
+
+/* Larger, higher-contrast version of the shared gamepad markup. */
+.gamepad-large {
+  max-width: 940px; margin: 6px auto 18px; padding: 26px 34px 30px;
+  background: radial-gradient(circle at 50% 20%, #1b2940, #0a1120 70%);
+  border: 2px solid var(--border); border-radius: 28px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.05), 0 18px 40px rgba(0,0,0,0.45);
+}
+.gamepad-large .gp-top { margin-bottom: 22px; }
+.gamepad-large .gp-btn.shoulder { width: 92px; height: 40px; font-size: 0.85rem; }
+.gamepad-large .gp-triggers { max-width: 360px; }
+.gamepad-large .trigger { font-size: 0.8rem; }
+.gamepad-large .trigger-track { height: 14px; margin-top: 6px; border-radius: 7px; }
+.gamepad-large .gp-main { gap: 40px; }
+.gamepad-large .gp-cluster { gap: 22px; }
+.gamepad-large .gp-btn.face { width: 68px; height: 68px; font-size: 1.35rem; border-radius: 50%; }
+.gamepad-large .gp-btn.small { width: 76px; height: 32px; font-size: 0.68rem; }
+.gamepad-large .gp-btn.stick-btn { width: 48px; height: 32px; font-size: 0.78rem; }
+.gamepad-large .dpad-btn { width: 56px; height: 56px; font-size: 1.15rem; }
+.gamepad-large .dpad-center { width: 56px; height: 56px; }
+.gamepad-large .stick { width: 108px; height: 108px; }
+.gamepad-large .stick-dot { width: 48px; height: 48px; }
+.gamepad-large .gp-center { gap: 12px; }
+
+.gamepad-large .gp-btn.active {
+  background: linear-gradient(180deg, #38bdf8, #0284c7);
+  color: #04203a; border-color: #7dd3fc;
+  box-shadow: 0 0 18px rgba(56,189,248,0.7);
+}
+.gamepad-large .stick-dot {
+  background: radial-gradient(circle at 35% 30%, #7dd3fc, #0284c7);
+  box-shadow: 0 0 12px rgba(56,189,248,0.5);
+}
+
+.display-readout {
+  display: grid; gap: 6px; padding: 12px 16px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+  font-size: 0.85rem; line-height: 1.5;
+}

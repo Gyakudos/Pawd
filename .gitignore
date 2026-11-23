@@ -1,0 +1,25 @@
+# Runtime artifacts
+/dist/
+/build/
+/pawd-webview-profile/
+/recordings/
+/reports/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Local test/probe scripts and configuration
+/ds_*.py
+/pawd-config.json
+/pawd-controller-maps.json
+
+# Android build outputs and local signing key
+/phone-app/build/
+/phone-app/debug.keystore
+
+# Broadcom driver package binaries (see drivers/README-test-driver.md)
+/drivers/BCM20702A0/
+/drivers/BCM20702A0-Test/
+/drivers/MediaTek-*/

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stick Position — Pawd</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/stick-view.css" />
+</head>
+<body>
+  <header class="stick-header">
+    <div>
+      <h1>Stick Position</h1>
+      <p>Exact X / Y position for both analog sticks</p>
+    </div>
+    <div class="stick-tools">
+      <label class="inline-field">Source
+        <select id="source" aria-label="Input source">
+          <option value="auto">Auto</option>
+          <option value="xinput">XInput</option>
+          <option value="dinput">DirectInput</option>
+          <option value="demo">Demo</option>
+        </select>
+      </label>
+      <label class="inline-field">Player
+        <select id="playerIndex" aria-label="Player index">
+          <option value="0">1</option><option value="1">2</option>
+          <option value="2">3</option><option value="3">4</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <main class="stick-main">
+    <div id="stickStatus" class="stick-status muted">Waiting for controller…</div>
+
+    <div class="stick-grid">
+      <section class="stick-card">
+        <div class="stick-card-head">
+          <h2>Left stick</h2>
+          <span class="stick-tag">LX / LY</span>
+        </div>
+        <div class="gauge" id="gaugeLeft">
+          <div class="gauge-grid"></div>
+          <div class="gauge-axis gauge-axis-x"></div>
+          <div class="gauge-axis gauge-axis-y"></div>
+          <div class="gauge-dot" id="dotLeft"></div>
+        </div>
+        <div class="stick-values">
+          <div><span class="axis-name">X</span><strong id="leftX">+0.00</strong></div>
+          <div><span class="axis-name">Y</span><strong id="leftY">+0.00</strong></div>
+        </div>
+        <div class="drift-row">
+          <span>Rest offset</span><strong id="leftDrift">0.00</strong>
+          <span>Max seen</span><strong id="leftMax">0.00</strong>
+        </div>
+      </section>
+
+      <section class="stick-card">
+        <div class="stick-card-head">
+          <h2>Right stick</h2>
+          <span class="stick-tag">RX / RY</span>
+        </div>
+        <div class="gauge" id="gaugeRight">
+          <div class="gauge-grid"></div>
+          <div class="gauge-axis gauge-axis-x"></div>
+          <div class="gauge-axis gauge-axis-y"></div>
+          <div class="gauge-dot" id="dotRight"></div>
+        </div>
+        <div class="stick-values">
+          <div><span class="axis-name">X</span><strong id="rightX">+0.00</strong></div>
+          <div><span class="axis-name">Y</span><strong id="rightY">+0.00</strong></div>
+        </div>
+        <div class="drift-row">
+          <span>Rest offset</span><strong id="rightDrift">0.00</strong>
+          <span>Max seen</span><strong id="rightMax">0.00</strong>
+        </div>
+      </section>
+    </div>
+
+    <div class="drift-controls">
+      <button id="zeroBtn" class="secondary">Set current position as center</button>
+      <button id="driftBtn" class="secondary">Start 10s drift check</button>
+      <span id="driftResult" class="drift-result muted">Rest offset = distance from the stored center.</span>
+    </div>
+
+    <p class="stick-hint">Values run from -1.00 to +1.00. Up and right are positive. Leave the sticks untouched during a drift check.</p>
+  </main>
+
+  <script src="/stick-view.js"></script>
+</body>
+</html>

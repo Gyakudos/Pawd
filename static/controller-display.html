@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Controller Live View — Pawd</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/controller-display.css" />
+</head>
+<body>
+  <header class="display-header">
+    <div>
+      <h1>Controller Live View</h1>
+      <p>Live gamepad state for connected controllers</p>
+    </div>
+    <div class="display-tools">
+      <label class="inline-field">Source
+        <select id="source" aria-label="Input source">
+          <option value="auto">Auto</option>
+          <option value="xinput">XInput</option>
+          <option value="dinput">DirectInput</option>
+          <option value="demo">Demo</option>
+        </select>
+      </label>
+      <label class="inline-field">Player
+        <select id="playerIndex" aria-label="Player index">
+          <option value="0">1</option><option value="1">2</option>
+          <option value="2">3</option><option value="3">4</option>
+        </select>
+      </label>
+      <a href="/" target="_blank" class="link-button">Open Pawd</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Detected controllers</h2>
+        <span id="detectedCount" class="muted">scanning…</span>
+      </div>
+      <div id="detected" class="detected-list"><p class="muted">Scanning devices…</p></div>
+    </section>
+
+    <section class="panel display-panel">
+      <div class="panel-head">
+        <h2 id="deviceTitle">Waiting for controller</h2>
+        <span id="statusBadge" class="live-source off">Disconnected</span>
+      </div>
+
+      <div class="gamepad gamepad-large" id="gamepad">
+        <div class="gp-top">
+          <div class="gp-shoulders">
+            <div class="gp-btn shoulder" data-btn="lb">LB</div>
+            <div class="gp-btn shoulder" data-btn="rb">RB</div>
+          </div>
+          <div class="gp-triggers">
+            <div class="trigger">
+              <span>LT</span>
+              <div class="trigger-track"><div class="trigger-fill" id="triggerLT"></div></div>
+            </div>
+            <div class="trigger">
+              <span>RT</span>
+              <div class="trigger-track"><div class="trigger-fill" id="triggerRT"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gp-main">
+          <div class="gp-cluster left">
+            <div class="dpad">
+              <div class="gp-btn dpad-btn" data-btn="up">▲</div>
+              <div class="dpad-mid">
+                <div class="gp-btn dpad-btn" data-btn="left">◀</div>
+                <div class="dpad-center"></div>
+                <div class="gp-btn dpad-btn" data-btn="right">▶</div>
+              </div>
+              <div class="gp-btn dpad-btn" data-btn="down">▼</div>
+            </div>
+            <div class="stick-wrap">
+              <div class="stick" id="stickLeft"><div class="stick-dot"></div></div>
+              <div class="gp-btn stick-btn" data-btn="ls">L3</div>
+            </div>
+          </div>
+
+          <div class="gp-center">
+            <div class="gp-btn small" data-btn="back">BACK</div>
+            <div class="gp-btn small" data-btn="guide">PS</div>
+            <div class="gp-btn small" data-btn="start">START</div>
+            <div class="gp-btn small" data-btn="touchpad">PAD</div>
+            <div class="gp-btn small" data-btn="mic">MIC</div>
+          </div>
+
+          <div class="gp-cluster right">
+            <div class="face-buttons">
+              <div class="gp-btn face" data-btn="y">Y</div>
+              <div class="gp-btn face" data-btn="x">X</div>
+              <div class="gp-btn face" data-btn="b">B</div>
+              <div class="gp-btn face" data-btn="a">A</div>
+            </div>
+            <div class="stick-wrap">
+              <div class="stick" id="stickRight"><div class="stick-dot"></div></div>
+              <div class="gp-btn stick-btn" data-btn="rs">R3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="display-readout">
+        <div><strong>Observed:</strong> <span id="observed" class="muted">none yet</span></div>
+        <div id="rawReadout" class="muted">Sticks/triggers: not moved yet</div>
+        <div id="batteryReadout" class="muted"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/controller-display.js"></script>
+</body>
+</html>

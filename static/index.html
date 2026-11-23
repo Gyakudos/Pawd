@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pawd — Device Test App</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Pawd — Device Test App</h1>
+    <p>Detect plugged-in devices and run guided test walkthroughs. Android phones and game controllers.</p>
+    <p class="version">Version <span id="appVersion">001.000.000.2026</span> · Major.Minor.Sub.Year</p>
+  </header>
+
+  <main>
+    <nav class="view-tabs" role="tablist" aria-label="Pawd views">
+      <button class="view-tab active" data-view="app" role="tab">Test app</button>
+      <button class="view-tab" data-view="controller" role="tab">Live controller</button>
+    </nav>
+
+    <div id="viewApp" class="view-pane">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Connected Devices</h2>
+        <button id="refreshBtn">Refresh</button>
+      </div>
+      <div id="summary" class="summary">Loading...</div>
+      <div id="adbStatus" class="adb-status"></div>
+      <div class="adb-actions">
+        <button id="installAdbBtn" class="secondary">Install ADB (Platform Tools)</button>
+        <span id="adbInstallMsg" class="muted"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="devicesTable">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Class</th>
+              <th>Manufacturer</th>
+              <th>Instance ID</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2 id="walkthroughTitle">Test Walkthrough</h2>
+        <div class="actions">
+          <button id="resetWalkthroughBtn" class="secondary">Reset</button>
+        </div>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="android" role="tab">Android phone</button>
+        <button class="tab" data-tab="controller" role="tab">Game controllers</button>
+      </div>
+      <p id="walkthroughIntro" class="muted"></p>
+      <div id="selectedDevice" class="selected-device">No specific device selected. Walkthrough can still be used.</div>
+      <ol id="walkthrough" class="walkthrough"></ol>
+      <div class="progress-row">
+        <div class="progress-bar"><div id="progressFill"></div></div>
+        <span id="progressText">0 / 0 complete</span>
+      </div>
+    </section>
+
+    <section class="panel" id="phonePanel">
+      <div class="panel-head">
+        <h2>On-phone test app</h2>
+        <label class="toggle">
+          <input type="checkbox" id="autoLaunchToggle" />
+          Auto-launch when a phone connects
+        </label>
+      </div>
+      <p class="muted">
+        Installs the Pawd Self Test app over ADB, grants runtime test permissions, wakes the phone,
+        keeps the screen on, and opens the on-device hardware dashboard.
+      </p>
+      <div class="phone-actions">
+        <button id="launchPhoneBtn">Install &amp; launch on phone</button>
+        <button id="stopPhoneBtn" class="secondary">Stop phone app</button>
+      </div>
+      <div id="phoneStatus" class="adb-status">Checking phone app status...</div>
+    </section>
+
+    <section class="panel hidden" id="controllerPanel">
+      <div class="panel-head">
+        <h2>Game controllers &amp; joysticks</h2>
+        <label class="toggle">
+          <input type="checkbox" id="controllerAutoToggle" />
+          Auto-open tests when a controller connects
+        </label>
+      </div>
+      <p class="muted">
+        Detects Xbox, PlayStation, Nintendo, racing wheels, flight sticks, and generic HID game controllers
+        through Windows Plug and Play. Use the <strong>Live controller</strong> view above to inspect
+        input — exact stick positions and the drift check are directly below the gamepad there. Use
+        demo mode to exercise the walkthrough without hardware.
+      </p>
+      <div class="controller-actions">
+        <button id="refreshControllersBtn" class="secondary">Refresh controllers</button>
+        <label class="inline-field">Player
+          <select id="controllerIndex" aria-label="Controller player index">
+            <option value="0">1</option>
+            <option value="1">2</option>
+            <option value="2">3</option>
+            <option value="3">4</option>
+          </select>
+        </label>
+        <label class="inline-field">Input source
+          <select id="controllerSource" aria-label="Live input source">
+            <option value="auto">Auto</option>
+            <option value="xinput">XInput</option>
+            <option value="dinput">DirectInput</option>
+            <option value="demo">Demo</option>
+          </select>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="controllerDemoToggle" />
+          Demo mode (synthetic input)
+        </label>
+        <button id="openControllerDisplayBtn" class="secondary">Go to live controller view</button>
+        <button id="openStickViewBtn" class="secondary">Go to stick position view</button>
+      </div>
+      <div id="controllerStatus" class="adb-status">Checking controllers...</div>
+      <div id="dinputStatus" class="adb-status muted" hidden></div>
+
+      <details id="mappingPanel" class="mapping-panel">
+        <summary>Button mapping (DirectInput devices)</summary>
+        <p class="muted">
+          Remap buttons and axes for pads, wheels, and flight sticks that report unusual indices.
+          Click <strong>Learn</strong>, then press the physical control; mappings are saved per device.
+        </p>
+        <div class="mapping-controls">
+          <label class="inline-field">Device
+            <select id="mappingDevice" aria-label="Device to map"></select>
+          </label>
+          <span id="mappingStatus" class="muted">Choose a DirectInput device to edit its mapping.</span>
+        </div>
+        <div id="mappingRaw" class="muted">Raw input: select DirectInput as the input source to inspect.</div>
+        <div id="mappingEditor" class="mapping-editor"></div>
+        <div class="mapping-actions">
+          <button id="mappingSaveBtn">Save mapping</button>
+          <button id="mappingResetBtn" class="secondary">Reset to default</button>
+        </div>
+      </details>
+
+      <div class="live-panel">
+        <div class="panel-head">
+          <h3>Live input</h3>
+          <span id="liveSource" class="live-source">Connecting...</span>
+        </div>
+        <div id="liveMeta" class="live-meta muted">Waiting for controller state...</div>
+
+        <div class="gamepad" id="gamepad">
+          <div class="gp-top">
+            <div class="gp-shoulders">
+              <div class="gp-btn shoulder" data-btn="lb">LB</div>
+              <div class="gp-btn shoulder" data-btn="rb">RB</div>
+            </div>
+            <div class="gp-triggers">
+              <div class="trigger">
+                <span>LT</span>
+                <div class="trigger-track"><div class="trigger-fill" id="triggerLT"></div></div>
+              </div>
+              <div class="trigger">
+                <span>RT</span>
+                <div class="trigger-track"><div class="trigger-fill" id="triggerRT"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="gp-main">
+            <div class="gp-cluster left">
+              <div class="dpad">
+                <div class="gp-btn dpad-btn" data-btn="up">▲</div>
+                <div class="dpad-mid">
+                  <div class="gp-btn dpad-btn" data-btn="left">◀</div>
+                  <div class="dpad-center"></div>
+                  <div class="gp-btn dpad-btn" data-btn="right">▶</div>
+                </div>
+                <div class="gp-btn dpad-btn" data-btn="down">▼</div>
+              </div>
+              <div class="stick-wrap">
+                <div class="stick" id="stickLeft"><div class="stick-dot"></div></div>
+                <div class="gp-btn stick-btn" data-btn="ls">L3</div>
+              </div>
+            </div>
+
+            <div class="gp-center">
+              <div class="gp-btn small" data-btn="back">BACK</div>
+              <div class="gp-btn small" data-btn="guide">PS</div>
+              <div class="gp-btn small" data-btn="start">START</div>
+              <div class="gp-btn small" data-btn="touchpad">PAD</div>
+              <div class="gp-btn small" data-btn="mic">MIC</div>
+            </div>
+
+            <div class="gp-cluster right">
+              <div class="face-buttons">
+                <div class="gp-btn face" data-btn="y">Y</div>
+                <div class="gp-btn face" data-btn="x">X</div>
+                <div class="gp-btn face" data-btn="b">B</div>
+                <div class="gp-btn face" data-btn="a">A</div>
+              </div>
+              <div class="stick-wrap">
+                <div class="stick" id="stickRight"><div class="stick-dot"></div></div>
+                <div class="gp-btn stick-btn" data-btn="rs">R3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="observed">
+          <strong>Observed inputs:</strong>
+          <span id="observedButtons" class="muted">none yet</span>
+          <div class="observed-axes muted" id="observedAxes">Sticks/triggers: not moved yet</div>
+        </div>
+      </div>
+
+      <div class="battery-panel">
+        <div class="panel-head">
+          <h3>Battery test (LiPo controllers)</h3>
+          <span id="batteryState" class="battery-state muted">Idle</span>
+        </div>
+        <p class="muted">
+          Samples the controller battery while charging or running on battery. Use the same
+          player/source as the live input panel. XInput reports only four levels, so its
+          percentages are approximate; DualSense and GC300 can report a precise percentage
+          when connected in a mode Pawd can read.
+        </p>
+        <div class="battery-readout">
+          <span id="batteryPercent" class="battery-percent">--%</span>
+          <span id="batterySource" class="muted">No reading yet</span>
+          <span id="batteryNote" class="muted"></span>
+        </div>
+        <div class="battery-controls">
+          <label>Test
+            <select id="batteryMode">
+              <option value="charge">Charge check</option>
+              <option value="discharge" selected>Discharge check</option>
+              <option value="benchmark">Runtime benchmark</option>
+            </select>
+          </label>
+          <label>Minutes <input type="number" id="batteryDuration" min="0" max="1440" step="1" value="15" /></label>
+          <label>Interval (s) <input type="number" id="batteryInterval" min="1" max="60" step="1" value="5" /></label>
+          <button id="batteryReadBtn">Read now</button>
+          <button id="batteryStartBtn">Start test</button>
+          <button id="batteryStopBtn" class="secondary">Stop</button>
+          <button id="batteryResetBtn" class="secondary">Clear</button>
+        </div>
+        <div class="battery-progress"><div id="batteryProgressFill"></div></div>
+        <div id="batteryResult" class="battery-result muted">No test run yet.</div>
+        <div id="batterySamples" class="battery-samples muted">No samples yet.</div>
+      </div>
+
+      <div class="rumble-panel">
+        <div class="panel-head"><h3>Rumble / haptics test</h3></div>
+        <div class="rumble-controls">
+          <label>Left motor <input type="range" id="rumbleLeft" min="0" max="100" value="60" /></label>
+          <label>Right motor <input type="range" id="rumbleRight" min="0" max="100" value="60" /></label>
+          <label>Duration (ms) <input type="number" id="rumbleDuration" min="50" max="5000" step="50" value="400" /></label>
+          <button id="rumbleBtn">Pulse rumble</button>
+          <button id="rumbleStopBtn" class="secondary">Stop rumble</button>
+          <span id="rumbleStatus" class="muted"></span>
+        </div>
+        <div class="rumble-presets">
+          <button class="secondary preset" data-left="100" data-right="100">Strong</button>
+          <button class="secondary preset" data-left="30" data-right="30">Light</button>
+          <button class="secondary preset" data-left="100" data-right="0">Left only</button>
+          <button class="secondary preset" data-left="0" data-right="100">Right only</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="recordingPanel">
+      <div class="panel-head">
+        <h2>Session recording</h2>
+        <span id="recIndicator" class="rec-indicator">Idle</span>
+      </div>
+      <p class="muted">
+        Records this Pawd window (choose the browser tab or window when prompted) or a webcam as a WebM video.
+        Completed walkthrough steps and test events are saved as timeline markers in the recording metadata.
+      </p>
+      <div class="record-controls">
+        <select id="recordSource" aria-label="Recording source">
+          <option value="display">Screen / window / tab</option>
+          <option value="camera">Webcam</option>
+        </select>
+        <button id="recordStartBtn">Start recording</button>
+        <button id="recordStopBtn" class="secondary" disabled>Stop &amp; save</button>
+        <span id="recordStatus" class="muted">Ready.</span>
+      </div>
+      <div id="recordingsList" class="recordings"></div>
+    </section>
+
+    <section class="panel" id="reportsPanel">
+      <div class="panel-head">
+        <h2>Test reports</h2>
+        <span id="reportStatus" class="muted">Ready.</span>
+      </div>
+      <p class="muted">
+        Generates a self-contained HTML session report with pass/fail/skip results, device details,
+        observed inputs, and links to recordings. Open a report and use your browser's
+        <strong>Print → Save as PDF</strong> to export a PDF.
+      </p>
+      <div class="report-fields">
+        <label>Tester / operator <input type="text" id="reportTester" placeholder="Name or initials" /></label>
+        <label>Session notes <textarea id="reportNotes" rows="2" placeholder="Observations, issues, environment..."></textarea></label>
+      </div>
+      <div class="report-actions">
+        <button id="generateReportBtn">Generate report</button>
+        <button id="downloadReportBtn" class="secondary" disabled>Download latest</button>
+      </div>
+      <div id="reportsList" class="reports"></div>
+    </section>
+    </div>
+
+    <div id="viewController" class="view-pane hidden">
+      <section id="controllerSection" class="view-section">
+        <iframe id="controllerFrame" class="view-frame controller-frame" title="Live controller view"></iframe>
+      </section>
+      <section id="stickSection" class="view-section">
+        <iframe id="stickFrame" class="view-frame stick-frame" title="Stick position"></iframe>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <small>Phone: touch, display, audio, camera, biometrics, sensors, vibration, buttons, GPS, system info. Controllers: PnP detection, XInput/DirectInput live views, exact stick positions with drift check, rumble tests, and guided hardware walkthrough with auto-completion.</small>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
