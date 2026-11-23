@@ -67,3 +67,5 @@ body { padding-bottom: 20px; }
   background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
   font-size: 0.85rem; line-height: 1.5;
 }
+
+.live-battery-panel { margin-top: 0; }

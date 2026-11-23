@@ -29,6 +29,7 @@
         </select>
       </label>
       <a href="/" target="_blank" class="link-button">Open Pawd</a>
+      <button id="openBatteryBtn" class="link-button" title="Open the LiPo battery test in Pawd">Battery test</button>
     </div>
   </header>
 
@@ -109,6 +110,43 @@
         <div><strong>Observed:</strong> <span id="observed" class="muted">none yet</span></div>
         <div id="rawReadout" class="muted">Sticks/triggers: not moved yet</div>
         <div id="batteryReadout" class="muted"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="battery-panel live-battery-panel" id="liveBatteryPanel">
+        <div class="panel-head">
+          <h3>Battery test (LiPo controllers)</h3>
+          <span id="liveBattState" class="battery-state muted">Idle</span>
+        </div>
+        <p class="muted">
+          Samples the selected player's battery while charging or on battery. Uses the same source and player as above.
+          XInput gives four coarse levels; DualSense reports a precise percentage when Pawd can read its HID data.
+          This test shares one session with the Battery test panel in the Test app view.
+        </p>
+        <div class="battery-readout">
+          <span id="liveBattPercent" class="battery-percent">--%</span>
+          <span id="liveBattSource" class="muted">No reading yet</span>
+          <span id="liveBattNote" class="muted"></span>
+        </div>
+        <div class="battery-controls">
+          <label>Test
+            <select id="liveBattMode">
+              <option value="charge">Charge check</option>
+              <option value="discharge" selected>Discharge check</option>
+              <option value="benchmark">Runtime benchmark</option>
+            </select>
+          </label>
+          <label>Minutes <input type="number" id="liveBattDuration" min="0" max="1440" step="1" value="15" /></label>
+          <label>Interval (s) <input type="number" id="liveBattInterval" min="1" max="60" step="1" value="5" /></label>
+          <button id="liveBattReadBtn">Read now</button>
+          <button id="liveBattStartBtn">Start test</button>
+          <button id="liveBattStopBtn" class="secondary">Stop</button>
+          <button id="liveBattResetBtn" class="secondary">Clear</button>
+        </div>
+        <div class="battery-progress"><div id="liveBattProgressFill"></div></div>
+        <div id="liveBattResult" class="battery-result muted">No test run yet.</div>
+        <div id="liveBattSamples" class="battery-samples muted">No samples yet.</div>
       </div>
     </section>
   </main>

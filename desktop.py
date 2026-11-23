@@ -7,6 +7,7 @@ back to opening the UI in the system's default browser (Opera, Chrome, Edge,
 Brave, Vivaldi, etc.).
 """
 import ctypes
+import ctypes.wintypes
 import os
 import re
 import subprocess
@@ -22,7 +23,10 @@ import server
 APP_ID = "Pawd.DeviceTest.1"
 DEFAULT_PORT = 8766
 MAIN_TITLE = "Pawd — Device Test App"
-WINDOW_TITLES = ("Pawd",)
+# Match the exact native window title so browser tabs whose titles merely
+# start with "Pawd" are never mistaken for a Pawd window.
+WINDOW_TITLES = (MAIN_TITLE,)
+SINGLE_INSTANCE_MUTEX = r"Local\Pawd_Single_Instance_001_000_000_2026"
 CHROMIUM_EXES = {
     "msedge.exe", "chrome.exe", "opera.exe", "brave.exe",
     "vivaldi.exe", "chromium.exe", "msedgewebview2.exe",
@@ -40,6 +44,34 @@ def vendor_dir() -> Path:
     base = Path(getattr(sys, "_MEIPASS", runtime_dir()))
     candidate = base / "vendor"
     return candidate if candidate.is_dir() else runtime_dir() / "vendor"
+
+
+def profile_dir() -> Path:
+    """WebView2 user data stays next to the app on drive F, never in %TEMP%."""
+    path = runtime_dir() / "pawd-webview-profile"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+_MUTEX_HANDLE = None
+
+
+def acquire_single_instance() -> bool:
+    """Return True only for the first running copy of Pawd."""
+    global _MUTEX_HANDLE
+    try:
+        kernel32 = ctypes.windll.kernel32
+        kernel32.CreateMutexW.argtypes = [
+            ctypes.c_void_p, ctypes.wintypes.BOOL, ctypes.wintypes.LPCWSTR]
+        kernel32.CreateMutexW.restype = ctypes.wintypes.HANDLE
+        kernel32.GetLastError.restype = ctypes.wintypes.DWORD
+        _MUTEX_HANDLE = kernel32.CreateMutexW(None, True, SINGLE_INSTANCE_MUTEX)
+        error = kernel32.GetLastError()
+        # ERROR_ALREADY_EXISTS means another Pawd already owns the mutex.
+        return bool(_MUTEX_HANDLE) and error != 183
+    except Exception as e:
+        print(f"[pawd] single-instance check unavailable: {e}")
+        return True
 
 
 def setup_output():
@@ -149,6 +181,9 @@ def _configure_user32(user32):
     user32.SendMessageW.argtypes = [
         ctypes.c_void_p, ctypes.c_uint, ctypes.c_size_t, ctypes.c_size_t]
     user32.SendMessageW.restype = ctypes.c_size_t
+    user32.PostMessageW.argtypes = [
+        ctypes.c_void_p, ctypes.c_uint, ctypes.c_size_t, ctypes.c_size_t]
+    user32.PostMessageW.restype = ctypes.c_bool
     return enum_proc
 
 
@@ -164,7 +199,7 @@ def pawd_windows():
                 if length:
                     title = ctypes.create_unicode_buffer(length + 1)
                     user32.GetWindowTextW(handle, title, length + 1)
-                    if any(title.value.startswith(p) for p in WINDOW_TITLES):
+                    if title.value in WINDOW_TITLES:
                         found.append((handle, title.value))
             return True
 
@@ -198,6 +233,19 @@ def apply_window_icon(ico_path: Path):
         pass
 
 
+def enforce_single_window(stop_event: threading.Event):
+    """Close duplicate Pawd windows and leave exactly one native window."""
+    try:
+        user32 = ctypes.windll.user32
+        _configure_user32(user32)
+        while not stop_event.is_set():
+            for handle, _title in pawd_windows()[1:]:
+                user32.PostMessageW(handle, 0x0010, 0, 0)  # WM_CLOSE
+            stop_event.wait(1.0)
+    except Exception as e:
+        print(f"[pawd] window enforcement error: {e}")
+
+
 def run_webview(url: str) -> bool:
     """Host the UI in embedded WebView2 windows; return False if unavailable."""
     vendor = vendor_dir()
@@ -210,14 +258,22 @@ def run_webview(url: str) -> bool:
         return False
 
     try:
-        main = webview.create_window(
-            MAIN_TITLE, f"{url}/", width=1360, height=940)
+        webview.create_window(
+            MAIN_TITLE, f"{url}/", width=1360, height=940, on_top=True)
+        stop_event = threading.Event()
         threading.Thread(
             target=apply_window_icon, args=(icon_path(),),
             name="pawd-icon", daemon=True,
         ).start()
-        print("[pawd] embedded webview: 1 window")
-        webview.start()
+        threading.Thread(
+            target=enforce_single_window, args=(stop_event,),
+            name="pawd-window-guard", daemon=True,
+        ).start()
+        print("[pawd] embedded webview: 1 topmost window, profile on drive F")
+        try:
+            webview.start(storage_path=str(profile_dir()))
+        finally:
+            stop_event.set()
         return True
     except Exception as e:
         print(f"[pawd] embedded webview failed: {e}")
@@ -284,6 +340,10 @@ def main():
     setup_output()
     set_app_id()
 
+    if not acquire_single_instance():
+        print("[pawd] another Pawd instance is already running; exiting")
+        return
+
     port = server.resolve_port(DEFAULT_PORT)
     url = f"http://127.0.0.1:{port}"
 
@@ -315,6 +375,10 @@ def main():
         embedded = False
 
     if not embedded:
+        if "--allow-browser-fallback" not in sys.argv:
+            print("[pawd] embedded WebView2 unavailable and browser fallback is disabled")
+            print("[pawd] relaunch with --allow-browser-fallback to opt in")
+            return
         browser = default_browser()
         print(f"[pawd] default browser fallback: {browser or 'system default'}")
         process = open_app_window(browser, f"{url}/", "1360,940")

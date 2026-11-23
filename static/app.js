@@ -58,6 +58,23 @@ const batteryResetBtn = document.getElementById('batteryResetBtn');
 const batteryProgressFill = document.getElementById('batteryProgressFill');
 const batteryResultEl = document.getElementById('batteryResult');
 const batterySamplesEl = document.getElementById('batterySamples');
+const batteryPanel = document.getElementById('batteryPanel');
+const batteryJumpBtn = document.getElementById('batteryJumpBtn');
+
+function jumpToBatteryPanel() {
+  // Battery test lives inside Test app -> Game controllers. Open both, then scroll.
+  switchView('app');
+  switchTab('controller');
+  if (batteryPanel) {
+    // Wait for the tab's hidden class to be removed before scrolling.
+    requestAnimationFrame(() => {
+      batteryPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      batteryPanel.classList.add('battery-flash');
+      setTimeout(() => batteryPanel.classList.remove('battery-flash'), 1800);
+    });
+  }
+  addMarker('Opened battery test panel');
+}
 
 const recordSource = document.getElementById('recordSource');
 const recordStartBtn = document.getElementById('recordStartBtn');
@@ -2098,6 +2115,12 @@ batteryReadBtn.addEventListener('click', batteryReadNow);
 batteryStartBtn.addEventListener('click', batteryStartTest);
 batteryStopBtn.addEventListener('click', batteryStopTest);
 batteryResetBtn.addEventListener('click', batteryResetTest);
+if (batteryJumpBtn) batteryJumpBtn.addEventListener('click', jumpToBatteryPanel);
+// The Live controller iframe can ask its parent to reveal the battery panel.
+window.addEventListener('message', (event) => {
+  if (event.data === 'pawd:open-battery') jumpToBatteryPanel();
+  else if (event.data === 'pawd:battery-pass') markStepDone('battery', 'controller');
+});
 document.querySelectorAll('.preset').forEach(btn => {
   btn.addEventListener('click', () => {
     rumbleLeftEl.value = btn.dataset.left;
@@ -2149,6 +2172,7 @@ loadVersion();
 renderWalkthrough();
 switchTab('android');
 switchView('app');
+if (window.location.hash === '#battery') jumpToBatteryPanel();
 loadDevices();
 loadControllers();
 loadMappings();

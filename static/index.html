@@ -17,6 +17,7 @@
     <nav class="view-tabs" role="tablist" aria-label="Pawd views">
       <button class="view-tab active" data-view="app" role="tab">Test app</button>
       <button class="view-tab" data-view="controller" role="tab">Live controller</button>
+      <button id="batteryJumpBtn" class="view-jump-btn" title="Jump to the LiPo battery test panel">Battery test</button>
     </nav>
 
     <div id="viewApp" class="view-pane">
@@ -221,7 +222,7 @@
         </div>
       </div>
 
-      <div class="battery-panel">
+      <div class="battery-panel" id="batteryPanel">
         <div class="panel-head">
           <h3>Battery test (LiPo controllers)</h3>
           <span id="batteryState" class="battery-state muted">Idle</span>

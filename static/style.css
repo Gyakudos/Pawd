@@ -96,6 +96,19 @@ code { color: #bae6fd; }
   color: var(--accent); border-bottom-color: var(--accent);
   background: rgba(56,189,248,0.08);
 }
+.view-jump-btn {
+  margin-left: auto; align-self: center;
+  padding: 6px 14px; border-radius: 999px;
+  border: 1px solid rgba(56,189,248,0.5);
+  background: rgba(56,189,248,0.12); color: var(--accent);
+  font-size: 0.85rem; font-weight: 700;
+}
+.view-jump-btn:hover { background: rgba(56,189,248,0.22); filter: none; }
+.battery-flash { animation: battery-flash 1.8s ease-out; }
+@keyframes battery-flash {
+  0%, 100% { box-shadow: none; }
+  20%, 60% { box-shadow: 0 0 0 3px var(--accent), 0 0 24px rgba(56,189,248,0.55); }
+}
 .view-section + .view-section { margin-top: 16px; }
 .view-frame {
   width: 100%; display: block;
