@@ -54,6 +54,10 @@
           <span>Rest offset</span><strong id="leftDrift">0.00</strong>
           <span>Max seen</span><strong id="leftMax">0.00</strong>
         </div>
+        <div class="spin-row">
+          <span>Spin</span><strong id="leftSpin">—</strong>
+          <span>Return</span><strong id="leftReturn">—</strong>
+        </div>
       </section>
 
       <section class="stick-card">
@@ -75,16 +79,20 @@
           <span>Rest offset</span><strong id="rightDrift">0.00</strong>
           <span>Max seen</span><strong id="rightMax">0.00</strong>
         </div>
+        <div class="spin-row">
+          <span>Spin</span><strong id="rightSpin">—</strong>
+          <span>Return</span><strong id="rightReturn">—</strong>
+        </div>
       </section>
     </div>
 
     <div class="drift-controls">
       <button id="zeroBtn" class="secondary">Set current position as center</button>
-      <button id="driftBtn" class="secondary">Start 10s drift check</button>
+      <button id="driftBtn" class="secondary">Spin to start drift check</button>
       <span id="driftResult" class="drift-result muted">Rest offset = distance from the stored center.</span>
     </div>
 
-    <p class="stick-hint">Values run from -1.00 to +1.00. Up and right are positive. Leave the sticks untouched during a drift check.</p>
+    <p class="stick-hint">Values run from -1.00 to +1.00. Up and right are positive. Rest offset and the drift check use raw axes with the game deadzone bypassed, so small drift is measurable. The check starts only after you spin each stick a full circle; release them and the return time to center is measured before the 10s hands-off drift window.</p>
   </main>
 
   <script src="/stick-view.js"></script>

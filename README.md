@@ -1,6 +1,6 @@
 # Pawd — PC Device Test App
 
-**Version:** `001.000.000.2026` (Major.Minor.Sub.Year) · **Repository:** https://github.com/Gyakudos/Pawd
+**Version:** `001.000.001.2026` (Major.Minor.Sub.Year) · **Repository:** https://github.com/Gyakudos/Pawd
 
 A local PC application for detecting plugged-in devices and running guided test walkthroughs.
 The current release covers **Android phones** (with a companion on-phone self-test app installed over ADB)
@@ -162,8 +162,11 @@ The **Live controller** view (`controller-display.html`) shows a large Xbox-styl
 mirrors the selected controller in real time. Immediately below it, the **Stick position** view
 (`stick-view.html`) shows two large gauges with exact X/Y values (-1.00 to +1.00) for the left and
 right analog sticks. It also has a drift check: **Set current position as center** stores a
-reference, and **Start 10s drift check** measures the largest deviation while you leave the sticks
-untouched (> 0.04 is flagged as drift). This is useful for verifying pads with suspected stick drift.
+reference, and **Spin to start drift check** requires one full rotation of each stick before the
+test begins. Once both spins register, release the sticks and Pawd times how long each takes to
+return to the stored center (a slow or incomplete return is flagged), then runs a 10-second
+hands-off window that measures the largest deviation (> 0.04 is flagged as drift). This catches
+both mechanical centering problems and electronic drift.
 
 - Choose **Source** (Auto / XInput / DirectInput / Demo) and **Player** independently of the Test app view.
 - Detected controllers are listed with family and VID/PID; buttons light up, sticks move, and trigger bars fill as input arrives.
@@ -234,7 +237,7 @@ Defaults:
 ## How it works
 
 - `server.py` serves the frontend from `static/` and exposes:
-  - `GET /api/version` — application version (`001.000.000.2026`)
+  - `GET /api/version` — application version (`001.000.001.2026`)
   - `GET /api/devices` — PnP/USB device list plus ADB status
   - `POST /api/adb/install` — download and extract Android Platform Tools locally
   - `GET /api/phone/status` — ADB state, connected serial, whether the phone app is installed/running, APK availability

@@ -550,13 +550,21 @@ class DirectInputManager:
                 buttons[name] = buttons[name] or bool(state.rgbButtons[bit])
 
         axes = {}
+        precise = {}
         for key in AXIS_KEYS:
             cfg = (mapping.get("axes") or {}).get(key) or DEFAULT_AXES[key]
             source = cfg.get("source", DEFAULT_AXES[key]["source"])
-            value = self._calibrated(index, key, _axis_raw(state, source))
-            if cfg.get("invert"):
-                value = -value
+            if source in ("lZ-low", "lZ-high"):
+                raw = state.lZ
+                calibrated = ((32767 - raw) if source == "lZ-low"
+                              else (raw - 32767)) / 32767.0
+            else:
+                calibrated = self._calibrated(index, key, _axis_raw(state, source))
+            value = -calibrated if cfg.get("invert") else calibrated
             axes[key] = _axis(value)
+            # Drift needs the real value: the 0.12 game deadzone would hide
+            # exactly the small offsets we are trying to measure.
+            precise[key] = round(max(-1.0, min(1.0, value)), 4)
 
         triggers = {}
         for key in TRIGGER_KEYS:
@@ -585,6 +593,7 @@ class DirectInputManager:
                 "lx": state.lX, "ly": state.lY,
                 "rx": state.lRx, "ry": state.lRy,
             },
+            "preciseAxes": precise,
             "rawButtons": [i for i, pressed in enumerate(state.rgbButtons) if pressed],
             "rawAllAxes": {source: _axis_raw(state, source) for source in AXIS_SOURCES},
             "triggers": triggers,

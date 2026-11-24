@@ -182,6 +182,14 @@ def _normalized(index: int, state: XINPUT_STATE, packet: int) -> dict:
             "rx": gamepad.sThumbRX,
             "ry": gamepad.sThumbRY,
         },
+        # Same axes without the 0.12 game deadzone so small drift is visible.
+        "preciseAxes": {
+            key: round(max(-1.0, min(1.0, value / 32767.0)), 4)
+            for key, value in {
+                "lx": gamepad.sThumbLX, "ly": gamepad.sThumbLY,
+                "rx": gamepad.sThumbRX, "ry": gamepad.sThumbRY,
+            }.items()
+        },
         "triggers": {
             "lt": _trigger(gamepad.bLeftTrigger),
             "rt": _trigger(gamepad.bRightTrigger),
@@ -228,6 +236,12 @@ def demo_state(index: int = 0) -> dict:
             "ly": int(math.cos(t * 0.7) * 32767),
             "rx": int(math.sin(t * 1.3 + 1.0) * 32767),
             "ry": int(math.cos(t * 1.1 + 0.5) * 32767),
+        },
+        "preciseAxes": {
+            "lx": round(math.sin(t * 0.9), 4),
+            "ly": round(math.cos(t * 0.7), 4),
+            "rx": round(math.sin(t * 1.3 + 1.0), 4),
+            "ry": round(math.cos(t * 1.1 + 0.5), 4),
         },
         "triggers": {
             "lt": round((math.sin(t * 0.8) + 1) / 2, 3),
