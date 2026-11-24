@@ -1,6 +1,6 @@
 # Pawd — PC Device Test App
 
-**Version:** `001.000.001.2026` (Major.Minor.Sub.Year) · **Repository:** https://github.com/Gyakudos/Pawd
+**Version:** `001.001.000.2026` (Major.Minor.Sub.Year) · **Repository:** https://github.com/Gyakudos/Pawd
 
 A local PC application for detecting plugged-in devices and running guided test walkthroughs.
 The current release covers **Android phones** (with a companion on-phone self-test app installed over ADB)
@@ -207,13 +207,76 @@ authentication, so an experimental test-signed driver for the Broadcom `VID_19FF
 prepared; see `drivers/README-test-driver.md`. That experiment requires Windows Test Mode and is
 documented separately — it is not part of the normal install.
 
+## Console view
+
+The top-level **Console** view is a generic shell for console testing. The **Console** selector
+currently offers **PlayStation 5**, **Nintendo Switch**, **Switch Lite**, and **Switch 2**; an Xbox
+Series X|S entry is present but disabled until that profile is added. A console profile is a
+`consoleProfiles` entry plus a matching walkthrough in `stepSets`, and Switch profiles share a
+single check engine in `app.js`, so adding another console does not require a layout rewrite.
+
+Retail consoles do not expose internal telemetry (CPU/GPU temperature, fan RPM, USB electrical
+data) to a PC, so Pawd cannot read those values directly. Each profile records what can be observed
+from the PC and lets you enter readings taken with your own instrument:
+
+- **USB charging check** — read a controller battery on the PC, plug it into a chosen console USB
+  port for a set number of minutes, reconnect it to the PC, then read again. Pawd computes the gain,
+  elapsed time, charge rate, and a good/bad verdict against a minimum-gain limit.
+- **Controller pairing handoff** — watch the PC's controller list while pairing a controller to
+  the console; Pawd records the moment it disappears from Windows.
+  - PS5: DualSense.
+  - Switch: Joy-Con.
+  - Switch 2: magnetic Joy-Con 2.
+  - Switch Lite: not applicable — controls are integrated, so this block is replaced by a note and
+    the integrated-controls walkthrough step.
+- **LAN reachability** — pings a console hostname/IP from the PC (`POST /api/ps5/ping`).
+  - Switch: dock Ethernet or Wi-Fi.
+  - Switch Lite: Wi-Fi only (no Ethernet dock).
+  - Switch 2: dock wired LAN or Wi-Fi 6.
+- **Temperature / fan log** — manually enter readings by zone (°C and optional RPM). Each reading
+  is labelled GOOD or BAD with the exact reason, and trends are summarised.
+- **Charge power log (Switch family)** — enter watts from a USB-C power meter, with optional volts
+  and amps for traceability. If watts is left blank, Pawd calculates it from volts × amps. Each
+  reading gets a GOOD/BAD verdict against the editable watt limits, and the charging walkthrough
+  step reflects both battery gain and watt readings.
+- Model-specific walkthroughs:
+  - **PS5** — power, HDMI, USB data ports, disc drive, rest mode.
+  - **Switch** — handheld screen/touch, Joy-Con, dock HDMI, dock USB-A, wired/Wi-Fi, game card, sleep.
+  - **Switch Lite** — handheld screen/touch, integrated controls, USB-C charging, Wi-Fi, game card, sleep.
+  - **Switch 2** — Joy-Con 2, dock HDMI and wired LAN/USB, both USB-C ports, game card, sleep.
+
+### Good vs bad measurements
+
+The **Good vs bad — pass criteria** block holds editable limits used to classify every console
+measurement:
+
+| Limit | Default | Used for |
+| --- | --- | --- |
+| Max temp | 75 °C | Manual temperature readings |
+| Min fan RPM | 0 (off) | Manual fan readings |
+| Max ping | 100 ms | LAN ping average |
+| Max loss | 0 % | LAN ping packet loss |
+| Min charge gain | +3 % | Console USB charging check |
+| Min charge W | 0 (disabled) | Switch charge power meter readings |
+| Max charge W | 0 (disabled) | Switch charge power meter readings |
+
+Set either watt limit to 0 to disable that side of the check. Each measurement shows **GOOD** or
+**BAD** plus why, for example `88 °C > 70 °C limit`, `average 80 ms > 60 ms`, or
+`18.4 W > 15 W limit`. Criteria are saved locally and included in reports, and each reading
+stores the limits that were active when it was taken. The defaults are conservative starting
+points, **not official Sony or Nintendo specifications** — adjust them to suit the console and test
+conditions.
+
+All console results are included in generated test reports. They are observational, not a substitute
+for console hardware diagnostics.
+
 ## Test reports
 
 Open the **Test reports** panel to:
 
 1. Optionally enter a tester name and session notes.
 2. Mark walkthrough steps **Pass** / **Fail** / **Skip** using the buttons on each step (the checkbox is a shortcut for Pass).
-3. Click **Generate report**. Pawd captures the current device state, both walkthroughs, observed controller inputs, and the recording list.
+3. Click **Generate report**. Pawd captures the current device state, all three walkthroughs, observed controller inputs, PS5 console results, and the recording list.
 4. Click **View** on a report, then use **Print → Save as PDF** in the browser to produce a PDF. **Download** saves the standalone HTML file.
 
 Reports are stored in `dist\reports\pawd-report-<timestamp>.html` with a `.json` sidecar summary.
@@ -237,7 +300,7 @@ Defaults:
 ## How it works
 
 - `server.py` serves the frontend from `static/` and exposes:
-  - `GET /api/version` — application version (`001.000.001.2026`)
+  - `GET /api/version` — application version (`001.001.000.2026`)
   - `GET /api/devices` — PnP/USB device list plus ADB status
   - `POST /api/adb/install` — download and extract Android Platform Tools locally
   - `GET /api/phone/status` — ADB state, connected serial, whether the phone app is installed/running, APK availability
@@ -259,6 +322,7 @@ Defaults:
   - `POST /api/controllers/battery/sample` — take one reading (`{"index":0,"source":"auto","record":false}`)
   - `POST /api/controllers/battery/start` — start a test (`{"index":0,"source":"auto","mode":"charge|discharge|benchmark","durationMs":900000,"intervalMs":5000}`)
   - `POST /api/controllers/battery/stop`, `POST /api/controllers/battery/reset` — stop or clear a session
+  - `POST /api/ps5/ping` — ping a PS5 hostname/IP on the LAN (`{"host":"192.168.1.50"}`); returns reachability, packet loss, and average RTT
 - `GET /api/recordings` — list saved recordings and metadata
   - `GET /api/recordings/file?name=...` — stream a saved WebM
   - `POST /api/recordings/save?name=...&meta=...` — upload a recording with base64url JSON metadata

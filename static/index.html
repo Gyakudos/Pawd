@@ -9,14 +9,15 @@
 <body>
   <header>
     <h1>Pawd — Device Test App</h1>
-    <p>Detect plugged-in devices and run guided test walkthroughs. Android phones and game controllers.</p>
-    <p class="version">Version <span id="appVersion">001.000.001.2026</span> · Major.Minor.Sub.Year</p>
+    <p>Detect plugged-in devices and run guided test walkthroughs. Android phones, game controllers, and console checks for PS5, Switch, Switch Lite, and Switch 2.</p>
+    <p class="version">Version <span id="appVersion">001.001.000.2026</span> · Major.Minor.Sub.Year</p>
   </header>
 
   <main>
     <nav class="view-tabs" role="tablist" aria-label="Pawd views">
       <button class="view-tab active" data-view="app" role="tab">Test app</button>
       <button class="view-tab" data-view="controller" role="tab">Live controller</button>
+      <button class="view-tab" data-view="console" role="tab">Console</button>
       <button id="batteryJumpBtn" class="view-jump-btn" title="Jump to the LiPo battery test panel">Battery test</button>
     </nav>
 
@@ -320,6 +321,157 @@
     </section>
     </div>
 
+    <div id="viewConsole" class="view-pane hidden">
+      <section class="panel">
+        <div class="panel-head">
+          <h2 id="consoleWalkthroughTitle">Console Test Walkthrough</h2>
+          <div class="actions">
+            <label class="inline-field">Console
+              <select id="consoleSelect" aria-label="Console profile">
+                <option value="ps5">PlayStation 5</option>
+                <option value="switch1">Nintendo Switch</option>
+                <option value="switchlite">Switch Lite</option>
+                <option value="switch2">Switch 2</option>
+                <option value="xbox" disabled>Xbox Series X|S (planned)</option>
+              </select>
+            </label>
+            <button id="resetConsoleWalkthroughBtn" class="secondary">Reset</button>
+          </div>
+        </div>
+        <p id="consoleWalkthroughIntro" class="muted"></p>
+        <div id="selectedConsoleDevice" class="selected-device">Console checks do not require a selected device.</div>
+        <ol id="consoleWalkthrough" class="walkthrough"></ol>
+        <div class="progress-row">
+          <div class="progress-bar"><div id="consoleProgressFill"></div></div>
+          <span id="consoleProgressText">0 / 0 complete</span>
+        </div>
+      </section>
+
+      <section class="panel" id="ps5Panel">
+        <div class="panel-head">
+          <h2>PS5 console check</h2>
+          <span id="ps5Badge" class="muted">No readings yet</span>
+        </div>
+        <p class="muted">
+          A retail PS5 does not expose internal temperature or fan telemetry to a PC. Pawd measures
+          what it can observe from the PC side — controller charging through the console's USB port,
+          controller pairing handoff, and LAN reachability — and lets you log temperature/RPM values
+          from your own instrument into the session report.
+        </p>
+
+        <div class="ps5-grid">
+          <div class="ps5-block">
+            <h3>USB charging check</h3>
+            <p class="muted">
+              Read the DualSense battery on this PC, plug it into a PS5 USB port for a set time,
+              then reconnect it here and read again. Requires a controller with a readable battery.
+            </p>
+            <div class="ps5-controls">
+              <label>Player
+                <select id="ps5Player">
+                  <option value="0">1</option><option value="1">2</option>
+                  <option value="2">3</option><option value="3">4</option>
+                </select>
+              </label>
+              <label>Source
+                <select id="ps5Source">
+                  <option value="auto">Auto</option>
+                  <option value="dinput">DirectInput</option>
+                  <option value="xinput">XInput</option>
+                  <option value="demo">Demo</option>
+                </select>
+              </label>
+              <label>Console port
+                <select id="ps5Port">
+                  <option value="front-a">Front USB-A</option>
+                  <option value="front-c">Front USB-C</option>
+                  <option value="rear-a">Rear USB-A</option>
+                </select>
+              </label>
+              <label>Minutes <input type="number" id="ps5ChargeMinutes" min="1" max="180" step="1" value="15" /></label>
+              <button id="ps5BeforeBtn">Read before</button>
+              <button id="ps5AfterBtn" class="secondary">Finish &amp; calculate</button>
+            </div>
+            <div id="ps5ChargeBefore" class="ps5-readout muted">No before reading yet.</div>
+            <div id="ps5ChargeAfter" class="ps5-readout muted">No charge result yet.</div>
+          </div>
+
+          <div class="ps5-block">
+            <h3>Controller pairing handoff</h3>
+            <p class="muted">
+              Start watching, then pair the controller to the PS5. Pawd watches the PC's controller
+              list and records the moment the controller disappears from Windows.
+            </p>
+            <div class="ps5-controls">
+              <button id="ps5PairWatchBtn">Watch for handoff</button>
+              <button id="ps5PairStopBtn" class="secondary" disabled>Stop watching</button>
+            </div>
+            <div id="ps5PairStatus" class="ps5-readout muted">Not watching.</div>
+            <div id="ps5PairEvents" class="ps5-events muted">No events recorded.</div>
+          </div>
+
+          <div class="ps5-block">
+            <h3>LAN reachability</h3>
+            <p class="muted">Optional: ping the console's IP or hostname on your local network.</p>
+            <div class="ps5-controls">
+              <label>PS5 hostname/IP <input type="text" id="ps5Host" placeholder="192.168.1.50" /></label>
+              <button id="ps5PingBtn">Ping</button>
+            </div>
+            <div id="ps5PingResult" class="ps5-readout muted">No ping result yet.</div>
+          </div>
+        </div>
+
+        <div class="ps5-block">
+          <div class="panel-head"><h3>Temperature &amp; fan log (manual readings)</h3></div>
+          <p class="muted">
+            Enter readings taken with your own thermometer, thermal camera, or fan tachometer.
+            Use the same zone names each time so the trend is comparable. Pawd flags readings
+            outside the limits you set and includes them in the report.
+          </p>
+          <div class="ps5-controls">
+            <label>Zone
+              <select id="ps5TempZone">
+                <option value="CPU">CPU</option>
+                <option value="GPU">GPU</option>
+                <option value="Exhaust">Exhaust vent</option>
+                <option value="Intake">Intake vent</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label>Temp °C <input type="number" id="ps5TempC" min="0" max="150" step="0.1" placeholder="e.g. 58" /></label>
+            <label>Fan RPM <input type="number" id="ps5FanRpm" min="0" max="20000" step="1" placeholder="optional" /></label>
+            <label>Note <input type="text" id="ps5ThermalNote" placeholder="idle / gaming / rest" /></label>
+            <button id="ps5ThermalAddBtn">Add reading</button>
+            <button id="ps5ThermalClearBtn" class="secondary">Clear</button>
+          </div>
+          <div id="ps5ThermalSummary" class="ps5-readout muted">No readings yet.</div>
+          <div id="ps5ThermalList" class="ps5-events muted">No readings yet.</div>
+        </div>
+
+        <div class="ps5-block">
+          <div class="panel-head">
+            <h3>Good vs bad — pass criteria</h3>
+            <span id="ps5CriteriaBadge" class="muted">Defaults</span>
+          </div>
+          <p class="muted">
+            Every measurement is labelled <strong>GOOD</strong> or <strong>BAD</strong> against these
+            limits, with the reason shown. The defaults are conservative starting points, not
+            official Sony specifications — adjust them to match the test you are running.
+          </p>
+          <div class="ps5-controls">
+            <label>Max temp °C <input type="number" id="ps5MaxTemp" min="0" max="150" step="1" value="75" /></label>
+            <label>Min fan RPM <input type="number" id="ps5MinRpm" min="0" max="20000" step="1" value="0" /></label>
+            <label>Max ping ms <input type="number" id="ps5MaxPingMs" min="0" max="5000" step="1" value="100" /></label>
+            <label>Max loss % <input type="number" id="ps5MaxLoss" min="0" max="100" step="1" value="0" /></label>
+            <label>Min charge gain % <input type="number" id="ps5MinGain" min="0" max="100" step="1" value="3" /></label>
+            <button id="ps5SaveCriteria">Save criteria</button>
+            <button id="ps5ResetCriteria" class="secondary">Reset defaults</button>
+          </div>
+          <div id="ps5CriteriaText" class="ps5-readout muted">No criteria saved yet.</div>
+        </div>
+      </section>
+    </div>
+
     <div id="viewController" class="view-pane hidden">
       <section id="controllerSection" class="view-section">
         <iframe id="controllerFrame" class="view-frame controller-frame" title="Live controller view"></iframe>
@@ -331,7 +483,7 @@
   </main>
 
   <footer>
-    <small>Phone: touch, display, audio, camera, biometrics, sensors, vibration, buttons, GPS, system info. Controllers: PnP detection, XInput/DirectInput live views, exact stick positions with drift check, rumble tests, and guided hardware walkthrough with auto-completion.</small>
+    <small>Phone: touch, display, audio, camera, biometrics, sensors, vibration, buttons, GPS, system info. Controllers: PnP detection, XInput/DirectInput live views, exact stick positions with drift check, rumble tests, and guided hardware walkthrough with auto-completion. Console: guided checks for PS5, Switch, Switch Lite, and Switch 2 with charging, USB watt-meter logging, controller handoff, LAN ping, and manual temperature/fan logging.</small>
   </footer>
 
   <script src="/app.js"></script>

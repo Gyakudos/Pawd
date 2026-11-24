@@ -57,7 +57,7 @@ PLATFORM_TOOLS_DIR = TOOLS_DIR / "platform-tools"
 LOCAL_ADB = PLATFORM_TOOLS_DIR / ("adb.exe" if os.name == "nt" else "adb")
 ADB_ZIP_URL = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
 
-APP_VERSION = "001.000.001.2026"  # Major.Minor.Sub.Year
+APP_VERSION = "001.001.000.2026"  # Major.Minor.Sub.Year
 PHONE_PACKAGE = "com.pawd.selftest"
 PHONE_ACTIVITY = f"{PHONE_PACKAGE}/.MainActivity"
 PHONE_APK = STATIC_DIR / "pawd-selftest.apk"
@@ -303,6 +303,41 @@ def battery_read(index: int, source: str, record: bool = False) -> dict:
     if record:
         return battery_api.SESSION.record_manual(reading)
     return reading
+
+
+def ps5_ping(host: str) -> dict:
+    """Best-effort LAN reachability check for a PS5 console.
+
+    Pawd cannot interrogate a retail PS5 directly; this only verifies that the
+    console answers ICMP echo requests on the local network.
+    """
+    host = str(host or "").strip()
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,253}", host) or host.startswith("-"):
+        return {"ok": False, "error": "Enter a valid hostname or IP address"}
+    count_flag, timeout_flag, timeout = (
+        ("-n", "-w", "1000") if os.name == "nt" else ("-c", "-W", "1"))
+    try:
+        proc = subprocess.run(
+            ["ping", count_flag, "2", timeout_flag, timeout, host],
+            capture_output=True, text=True, timeout=8)
+        output = ((proc.stdout or "") + (proc.stderr or ""))[-2000:]
+        loss = None
+        match = re.search(r"\((\d+)%\s*loss\)|(\d+)%\s*packet\s+loss", output, re.I)
+        if match:
+            loss = int(match.group(1) or match.group(2))
+        times = [float(v) for v in re.findall(
+            r"time[<>=:]\s*([\d.]+)\s*ms", output, re.I) if v]
+        avg = round(sum(times) / len(times), 1) if times else None
+        return {
+            "ok": True,
+            "host": host,
+            "reachable": proc.returncode == 0,
+            "lossPercent": loss,
+            "avgMs": avg,
+            "output": output,
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 def _battery_request_values(body: dict) -> tuple[int, str, str, int, int]:
@@ -1264,6 +1299,12 @@ class Handler(SimpleHTTPRequestHandler):
                 self._send_json(200, battery_read(index, source, record=record))
             except Exception as e:
                 self._send_json(500, {"error": str(e), "available": False})
+            return
+        if parsed.path == "/api/ps5/ping":
+            try:
+                self._send_json(200, ps5_ping(self._read_json().get("host")))
+            except Exception as e:
+                self._send_json(500, {"ok": False, "error": str(e)})
             return
         if parsed.path == "/api/recordings/save":
             try:

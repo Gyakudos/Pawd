@@ -1,5 +1,11 @@
 const refreshBtn = document.getElementById('refreshBtn');
 const resetWalkthroughBtn = document.getElementById('resetWalkthroughBtn');
+const consoleWalkthroughEl = document.getElementById('consoleWalkthrough');
+const consoleWalkthroughTitle = document.getElementById('consoleWalkthroughTitle');
+const consoleWalkthroughIntro = document.getElementById('consoleWalkthroughIntro');
+const consoleProgressFill = document.getElementById('consoleProgressFill');
+const consoleProgressText = document.getElementById('consoleProgressText');
+const resetConsoleWalkthroughBtn = document.getElementById('resetConsoleWalkthroughBtn');
 const installAdbBtn = document.getElementById('installAdbBtn');
 const adbInstallMsg = document.getElementById('adbInstallMsg');
 const autoLaunchToggle = document.getElementById('autoLaunchToggle');
@@ -61,6 +67,74 @@ const batterySamplesEl = document.getElementById('batterySamples');
 const batteryPanel = document.getElementById('batteryPanel');
 const batteryJumpBtn = document.getElementById('batteryJumpBtn');
 
+const ps5Panel = document.getElementById('ps5Panel');
+const ps5Badge = document.getElementById('ps5Badge');
+const ps5Player = document.getElementById('ps5Player');
+const ps5Source = document.getElementById('ps5Source');
+const ps5Port = document.getElementById('ps5Port');
+const consoleSelect = document.getElementById('consoleSelect');
+const ps5ChargeMinutes = document.getElementById('ps5ChargeMinutes');
+const ps5BeforeBtn = document.getElementById('ps5BeforeBtn');
+const ps5AfterBtn = document.getElementById('ps5AfterBtn');
+const ps5ChargeBefore = document.getElementById('ps5ChargeBefore');
+const ps5ChargeAfter = document.getElementById('ps5ChargeAfter');
+const ps5PairWatchBtn = document.getElementById('ps5PairWatchBtn');
+const ps5PairStopBtn = document.getElementById('ps5PairStopBtn');
+const ps5PairStatus = document.getElementById('ps5PairStatus');
+const ps5PairEvents = document.getElementById('ps5PairEvents');
+const ps5Host = document.getElementById('ps5Host');
+const ps5PingBtn = document.getElementById('ps5PingBtn');
+const ps5PingResult = document.getElementById('ps5PingResult');
+const ps5TempZone = document.getElementById('ps5TempZone');
+const ps5TempC = document.getElementById('ps5TempC');
+const ps5FanRpm = document.getElementById('ps5FanRpm');
+const ps5ThermalNote = document.getElementById('ps5ThermalNote');
+const ps5ThermalAddBtn = document.getElementById('ps5ThermalAddBtn');
+const ps5ThermalClearBtn = document.getElementById('ps5ThermalClearBtn');
+const ps5ThermalSummary = document.getElementById('ps5ThermalSummary');
+const ps5ThermalList = document.getElementById('ps5ThermalList');
+const ps5MaxTemp = document.getElementById('ps5MaxTemp');
+const ps5MinRpm = document.getElementById('ps5MinRpm');
+const ps5MaxPingMs = document.getElementById('ps5MaxPingMs');
+const ps5MaxLoss = document.getElementById('ps5MaxLoss');
+const ps5MinGain = document.getElementById('ps5MinGain');
+const ps5SaveCriteria = document.getElementById('ps5SaveCriteria');
+const ps5ResetCriteria = document.getElementById('ps5ResetCriteria');
+const ps5CriteriaBadge = document.getElementById('ps5CriteriaBadge');
+const ps5CriteriaText = document.getElementById('ps5CriteriaText');
+
+// Add a profile here (and a matching stepSets entry) when another console is supported.
+const consoleProfiles = {
+  ps5: {
+    label: 'PlayStation 5',
+    stepCategory: 'ps5',
+    panelId: 'ps5Panel',
+    render: () => renderPs5(),
+  },
+  switch1: {
+    label: 'Nintendo Switch',
+    stepCategory: 'switch1',
+    panelId: 'switch1Panel',
+    pairingLabel: 'Joy-Con',
+    render: () => renderConsoleCheck('switch1'),
+  },
+  switchlite: {
+    label: 'Switch Lite',
+    stepCategory: 'switchlite',
+    panelId: 'switchLitePanel',
+    pairingLabel: null,
+    render: () => renderConsoleCheck('switchlite'),
+  },
+  switch2: {
+    label: 'Switch 2',
+    stepCategory: 'switch2',
+    panelId: 'switch2Panel',
+    pairingLabel: 'Joy-Con 2',
+    render: () => renderConsoleCheck('switch2'),
+  },
+};
+let consoleProfileId = 'ps5';
+
 function jumpToBatteryPanel() {
   // Battery test lives inside Test app -> Game controllers. Open both, then scroll.
   switchView('app');
@@ -119,7 +193,7 @@ Object.keys(stepState).forEach(k => {
   else if (stepState[k] === false || stepState[k] == null) delete stepState[k];
 });
 const sessionStartedAt = Date.now();
-let appVersion = '001.000.001.2026';
+let appVersion = '001.001.000.2026';
 
 const stepSets = {
   android: {
@@ -267,6 +341,256 @@ const stepSets = {
         hint: 'Repeated failures after reconnect suggest driver, dongle, or hardware issues.'
       }
     ]
+  },
+  ps5: {
+    title: 'PS5 Console Test Walkthrough',
+    intro: 'Guided console checks. Pawd can observe charging, pairing handoff, and LAN reachability from this PC; other results are entered manually.',
+    empty: 'PS5 console checks do not require a selected device.',
+    steps: [
+      {
+        id: 'power',
+        title: 'Console powers on normally',
+        desc: 'Power on the PS5 and confirm normal startup with no error light or unexpected fan noise.',
+        hint: 'Note any beep pattern, blinking light, or loud fan at idle in the session notes.'
+      },
+      {
+        id: 'usb-charge',
+        title: 'USB port charges a controller',
+        desc: 'Use the USB charging check: read the controller battery here, plug it into a PS5 USB port for the chosen time, then reconnect and read again.',
+        hint: 'Use a known-good USB-C cable. A DualSense over DirectInput gives an exact percentage; XInput levels are coarse.'
+      },
+      {
+        id: 'pairing',
+        title: 'Controller pairs to the console',
+        desc: 'Start the pairing watch, then pair a DualSense to the PS5 and confirm the controller disappears from this PC.',
+        hint: 'The controller must not be connected by USB while pairing. Re-pair it to the PC afterwards if you want to continue controller tests.'
+      },
+      {
+        id: 'network',
+        title: 'LAN reachability',
+        desc: 'Enter the PS5 IP address or hostname and confirm it answers a ping from this PC.',
+        hint: 'If ping fails, check that both devices are on the same network and that the console is not in Wi-Fi-only isolation mode.'
+      },
+      {
+        id: 'video',
+        title: 'HDMI output',
+        desc: 'Connect the PS5 to a display and confirm stable video at the expected resolution with no flicker or artefacts.',
+        hint: 'Try a different HDMI cable/port if the picture drops out. Pawd cannot inspect the video signal itself.'
+      },
+      {
+        id: 'usb-data',
+        title: 'USB data ports',
+        desc: 'Plug a known-good USB storage device into each console USB port and confirm the PS5 recognises it.',
+        hint: 'Test front and rear ports separately to isolate a single failing port.'
+      },
+      {
+        id: 'disc',
+        title: 'Disc drive (if fitted)',
+        desc: 'Insert a known-good disc and confirm it is read without excessive noise or repeated spinning up.',
+        hint: 'Skip this step on digital-only consoles.'
+      },
+      {
+        id: 'thermal',
+        title: 'Temperatures and fan speed',
+        desc: 'Enter temperature and fan RPM readings from your own instrument. Pawd records each reading and flags values outside the configured limits.',
+        hint: 'There is no public API for PS5 internal sensors, so these readings must be supplied manually. Take idle and loaded readings for comparison.'
+      },
+      {
+        id: 'rest',
+        title: 'Rest mode and resume',
+        desc: 'Put the console into rest mode, confirm a controller can charge, then resume and verify the session restarts correctly.',
+        hint: 'Check that rest-mode charging stays enabled in the PS5 power settings.'
+      }
+    ]
+  },
+  switch1: {
+    title: 'Nintendo Switch Console Test Walkthrough',
+    intro: 'Checks for the original Switch family (HAC-001 / HAC-001-01 / OLED). Pawd can observe controller handoff, charging, and LAN reachability from this PC; dock, screen, and card checks are entered manually.',
+    empty: 'Switch console checks do not require a selected device.',
+    steps: [
+      {
+        id: 'power',
+        title: 'Console powers on normally',
+        desc: 'Power on the Switch and confirm normal startup with no error screen or unusual fan noise.',
+        hint: 'Note any repeated reboot or charging icon that appears instead of a normal boot.'
+      },
+      {
+        id: 'handheld',
+        title: 'Handheld screen and touch',
+        desc: 'In handheld mode, confirm the built-in display is stable and touch input registers across the screen.',
+        hint: 'Check for dead pixels, flicker, and dead zones in the touch panel.'
+      },
+      {
+        id: 'joycon',
+        title: 'Joy-Con detach and pairing',
+        desc: 'Detach both Joy-Con, start the pairing watch here, then reattach or pair them to the console and confirm they leave this PC.',
+        hint: 'Joy-Con that are connected by USB will not hand off; disconnect them from the PC first.'
+      },
+      {
+        id: 'dock-video',
+        title: 'Dock HDMI output',
+        desc: 'Dock the console and confirm stable HDMI video up to 1080p with no flicker or dropouts.',
+        hint: 'Try a different HDMI cable or dock port if the picture is unstable.'
+      },
+      {
+        id: 'dock-usb',
+        title: 'Dock USB-A ports',
+        desc: 'Plug a known-good USB device into each dock USB-A port and confirm the Switch recognises it.',
+        hint: 'Test each port separately; some docks supply charge only on a subset of ports.'
+      },
+      {
+        id: 'network',
+        title: 'Wired or Wi-Fi reachability',
+        desc: 'Use the console\'s dock Ethernet or Wi-Fi address and confirm it answers a ping from this PC.',
+        hint: 'Switch 1 has no Ethernet port on the console itself; wired LAN requires a dock.'
+      },
+      {
+        id: 'charge',
+        title: 'USB-C charging',
+        desc: 'Use the charging check: read a controller battery on the PC, charge through a Switch USB port, then read again.',
+        hint: 'The console USB-C port is used for charging and for connecting to the dock.'
+      },
+      {
+        id: 'gamecard',
+        title: 'Game card slot',
+        desc: 'Insert a known-good game card and confirm it is detected and loads without repeated read errors.',
+        hint: 'Skip if you only test digital software.'
+      },
+      {
+        id: 'thermal',
+        title: 'Temperatures and fan speed',
+        desc: 'Enter temperature and fan RPM readings from your own instrument and compare them with the configured limits.',
+        hint: 'Switch consoles do not expose internal sensor telemetry to a PC; readings must be entered manually.'
+      },
+      {
+        id: 'sleep',
+        title: 'Sleep and wake',
+        desc: 'Put the console to sleep and wake it with a Joy-Con button; confirm the session resumes normally.',
+        hint: 'Check that the console does not wake unexpectedly from controller input.'
+      }
+    ]
+  },
+  switchlite: {
+    title: 'Switch Lite Console Test Walkthrough',
+    intro: 'Checks for the handheld-only Switch Lite (HDH-001). It has integrated controls, no TV dock, no detachable Joy-Con, and no wired LAN dock; charging and Wi-Fi checks are automated where possible.',
+    empty: 'Switch Lite checks do not require a selected device.',
+    steps: [
+      {
+        id: 'power',
+        title: 'Console powers on normally',
+        desc: 'Power on the Switch Lite and confirm normal startup with no error screen or unusual noise.',
+        hint: 'Because it is handheld-only, there is no dock or HDMI output to verify.'
+      },
+      {
+        id: 'handheld',
+        title: 'Built-in screen and touch',
+        desc: 'Confirm the built-in display is stable and touch input registers across the screen.',
+        hint: 'Look for dead pixels, flicker, and unresponsive touch zones.'
+      },
+      {
+        id: 'controls',
+        title: 'Integrated controls',
+        desc: 'Exercise every built-in button, stick, and shoulder trigger; mark PASS only when all inputs register correctly.',
+        hint: 'Switch Lite controls are not detachable, so the pairing handoff check does not apply.'
+      },
+      {
+        id: 'charge',
+        title: 'USB-C charging',
+        desc: 'Use the charging check: read a controller battery on the PC, charge through the Switch Lite USB-C port, then read again.',
+        hint: 'Use a known-good USB-C cable and charger; the Lite has no dock USB-A ports.'
+      },
+      {
+        id: 'network',
+        title: 'Wi-Fi reachability',
+        desc: 'Enter the Switch Lite Wi-Fi IP address and confirm it answers a ping from this PC.',
+        hint: 'Switch Lite has no Ethernet port; ping uses Wi-Fi only.'
+      },
+      {
+        id: 'gamecard',
+        title: 'Game card slot',
+        desc: 'Insert a known-good game card and confirm it is detected and loads without repeated read errors.',
+        hint: 'Skip if you only test digital software.'
+      },
+      {
+        id: 'thermal',
+        title: 'Temperatures and chassis warmth',
+        desc: 'Enter temperature readings from your own instrument and compare them with the configured limits.',
+        hint: 'There is no public API for Switch Lite internal sensors; use a thermal camera or contact thermometer.'
+      },
+      {
+        id: 'sleep',
+        title: 'Sleep and wake',
+        desc: 'Put the console to sleep and wake it; confirm it resumes without a reload or charging error.',
+        hint: 'Check that the power button and sleep timing behave consistently.'
+      }
+    ]
+  },
+  switch2: {
+    title: 'Switch 2 Console Test Walkthrough',
+    intro: 'Checks for the Nintendo Switch 2. Pawd observes Joy-Con 2 handoff, charging, and LAN reachability; dock video, USB-C ports, and game card checks are entered manually.',
+    empty: 'Switch 2 checks do not require a selected device.',
+    steps: [
+      {
+        id: 'power',
+        title: 'Console powers on normally',
+        desc: 'Power on the Switch 2 and confirm normal startup with no error screen or unexpected fan noise.',
+        hint: 'Note any repeated reboot or failure to leave the charging screen.'
+      },
+      {
+        id: 'joycon2',
+        title: 'Joy-Con 2 attach and pairing',
+        desc: 'Detach the magnetic Joy-Con 2, start the pairing watch here, then reattach or pair them to the console and confirm they leave this PC.',
+        hint: 'Joy-Con 2 attach magnetically and can act as a mouse; verify both attachment and pointer input.'
+      },
+      {
+        id: 'dock-video',
+        title: 'Dock HDMI output',
+        desc: 'Dock the console and confirm stable HDMI output at the expected resolution.',
+        hint: 'Use a cable and display that support the resolution you are testing.'
+      },
+      {
+        id: 'dock-lan',
+        title: 'Dock wired LAN and USB',
+        desc: 'Connect the dock Ethernet port and USB terminals; confirm wired networking and attached USB devices are recognised.',
+        hint: 'Wired LAN is available through the Switch 2 dock in TV mode.'
+      },
+      {
+        id: 'usb-c',
+        title: 'Both USB-C ports',
+        desc: 'Test the bottom USB-C port (charging/dock) and the top USB-C port (accessories/charging) separately.',
+        hint: 'Confirm the top port can charge or drive an accessory while the console is in use.'
+      },
+      {
+        id: 'charge',
+        title: 'USB-C charging',
+        desc: 'Use the charging check: read a controller battery on the PC, charge through a Switch 2 USB port, then read again.',
+        hint: 'Use a known-good USB-C cable and charger capable of the console\'s power draw.'
+      },
+      {
+        id: 'network',
+        title: 'LAN reachability',
+        desc: 'Enter the Switch 2 dock Ethernet or Wi-Fi 6 address and confirm it answers a ping from this PC.',
+        hint: 'If ping fails, check that both devices are on the same network and that client isolation is disabled.'
+      },
+      {
+        id: 'gamecard',
+        title: 'Game card slot',
+        desc: 'Insert a known-good Switch 2 game card and confirm it is detected and loads without read errors.',
+        hint: 'Check backwards-compatible cards separately if you test those.'
+      },
+      {
+        id: 'thermal',
+        title: 'Temperatures and fan speed',
+        desc: 'Enter temperature and fan RPM readings from your own instrument and compare them with the configured limits.',
+        hint: 'There is no public API for Switch 2 internal sensors; readings must be entered manually.'
+      },
+      {
+        id: 'sleep',
+        title: 'Sleep and wake',
+        desc: 'Put the console to sleep and wake it; confirm the session and controller pairing resume normally.',
+        hint: 'Verify that Joy-Con 2 remain paired after wake.'
+      }
+    ]
   }
 };
 
@@ -320,17 +644,18 @@ function markStepDone(id, category = activeTab) {
   addMarker(`Passed: ${step ? step.title : id}`);
 }
 
-function renderWalkthrough() {
-  const set = stepSets[activeTab];
-  walkthroughTitle.textContent = set.title;
-  walkthroughIntro.textContent = set.intro;
-  walkthroughEl.innerHTML = '';
+function renderWalkthroughInto(category, opts) {
+  const set = stepSets[category];
+  if (!set || !opts.listEl) return;
+  if (opts.titleEl) opts.titleEl.textContent = set.title;
+  if (opts.introEl) opts.introEl.textContent = set.intro;
+  opts.listEl.innerHTML = '';
   set.steps.forEach(step => {
-    const status = stepStatus(activeTab, step.id);
+    const status = stepStatus(category, step.id);
     const li = document.createElement('li');
     li.className = `step status-${status}`;
     li.dataset.stepId = step.id;
-    const inputId = `step-${activeTab}-${step.id}`;
+    const inputId = `step-${category}-${step.id}`;
     const badge = STATUS_LABELS[status]
       ? `<span class="step-status ${status}">${STATUS_LABELS[status]}</span>`
       : '';
@@ -350,42 +675,69 @@ function renderWalkthrough() {
       </div>`;
     const cb = li.querySelector('input');
     cb.addEventListener('change', () => {
-      setStepStatus(activeTab, step.id, cb.checked ? 'pass' : 'not_tested', step.title);
+      setStepStatus(category, step.id, cb.checked ? 'pass' : 'not_tested', step.title);
     });
     li.querySelectorAll('[data-status]').forEach(btn => {
       btn.addEventListener('click', () => {
         const s = btn.dataset.status;
-        setStepStatus(activeTab, step.id, s === status ? 'not_tested' : s, step.title);
+        setStepStatus(category, step.id, s === status ? 'not_tested' : s, step.title);
       });
     });
-    walkthroughEl.appendChild(li);
+    opts.listEl.appendChild(li);
   });
-  updateProgress();
+  updateProgressInto(category, opts.fillEl, opts.textEl);
 }
 
-function updateProgress() {
-  const steps = stepSets[activeTab].steps;
-  const statuses = steps.map(s => stepStatus(activeTab, s.id));
+function updateProgressInto(category, fillEl, textEl) {
+  const steps = stepSets[category].steps;
+  const statuses = steps.map(s => stepStatus(category, s.id));
   const total = steps.length;
   const done = statuses.filter(s => s === 'pass').length;
   const failed = statuses.filter(s => s === 'fail').length;
   const skipped = statuses.filter(s => s === 'skip').length;
   const pct = total ? Math.round((done / total) * 100) : 0;
-  progressFill.style.width = pct + '%';
-  progressText.textContent = `${done} / ${total} pass${failed ? ` · ${failed} fail` : ''}${skipped ? ` · ${skipped} skip` : ''}`;
+  if (fillEl) fillEl.style.width = pct + '%';
+  if (textEl) textEl.textContent = `${done} / ${total} pass${failed ? ` · ${failed} fail` : ''}${skipped ? ` · ${skipped} skip` : ''}`;
+}
+
+function renderWalkthrough() {
+  renderWalkthroughInto(activeTab, {
+    titleEl: walkthroughTitle,
+    introEl: walkthroughIntro,
+    listEl: walkthroughEl,
+    fillEl: progressFill,
+    textEl: progressText,
+  });
+  const profile = consoleProfiles[consoleProfileId];
+  if (profile) {
+    renderWalkthroughInto(profile.stepCategory, {
+      titleEl: consoleWalkthroughTitle,
+      introEl: consoleWalkthroughIntro,
+      listEl: consoleWalkthroughEl,
+      fillEl: consoleProgressFill,
+      textEl: consoleProgressText,
+    });
+  }
 }
 
 const viewPanes = {
   app: 'viewApp',
   controller: 'viewController',
+  console: 'viewConsole',
 };
 const frameSources = {
   controllerFrame: '/controller-display.html',
   stickFrame: '/stick-view.html',
 };
+let currentView = 'app';
 
 function switchView(view) {
   if (!viewPanes[view]) return;
+  if (currentView === 'console' && view !== 'console') {
+    if (ps5Watcher) stopPs5PairWatch();
+    Object.keys(consoleWatchers).forEach(id => consoleStopPairWatch(id));
+  }
+  currentView = view;
   document.querySelectorAll('.view-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.view === view);
   });
@@ -399,11 +751,50 @@ function switchView(view) {
     const target = view === 'controller' ? src : 'about:blank';
     if (frame.getAttribute('src') !== target) frame.src = target;
   });
+  if (view === 'console') {
+    applyConsoleProfile();
+    renderWalkthrough();
+  }
+}
+
+function applyConsoleProfile() {
+  const profile = consoleProfiles[consoleProfileId];
+  if (!profile) return null;
+  Object.entries(consoleProfiles).forEach(([id, p]) => {
+    const panel = document.getElementById(p.panelId);
+    if (panel) panel.classList.toggle('hidden', id !== consoleProfileId);
+  });
+  return profile;
+}
+
+function selectConsoleProfile(id) {
+  if (!consoleProfiles[id]) return;
+  consoleProfileId = id;
+  if (consoleSelect && consoleSelect.value !== id) consoleSelect.value = id;
+  applyConsoleProfile();
+  renderWalkthrough();
+  addMarker(`Selected ${consoleProfiles[id].label} console profile`);
 }
 
 document.querySelectorAll('.view-tab').forEach(btn => {
   btn.addEventListener('click', () => switchView(btn.dataset.view));
 });
+if (consoleSelect) {
+  consoleSelect.addEventListener('change', () => selectConsoleProfile(consoleSelect.value));
+}
+if (resetConsoleWalkthroughBtn) {
+  resetConsoleWalkthroughBtn.addEventListener('click', () => {
+    const profile = consoleProfiles[consoleProfileId];
+    if (!profile) return;
+    stepSets[profile.stepCategory].steps.forEach(s => {
+      delete stepState[stepKey(profile.stepCategory, s.id)];
+    });
+    saveStepState();
+    renderWalkthrough();
+    if (profile.render) profile.render();
+    addMarker(`Reset ${profile.label} console walkthrough`);
+  });
+}
 
 function switchTab(tab) {
   if (!stepSets[tab]) return;
@@ -423,7 +814,8 @@ function switchTab(tab) {
     stopLivePolling();
     stopBatteryPolling();
   }
-  if (changed) addMarker(`Switched to ${tab === 'android' ? 'Android phone' : 'game controller'} tests`);
+  const label = tab === 'android' ? 'Android phone' : 'game controller';
+  if (changed) addMarker(`Switched to ${label} tests`);
 }
 
 document.querySelectorAll('.tab').forEach(btn => {
@@ -1366,6 +1758,1214 @@ async function batteryResetTest() {
   }
 }
 
+/* ---------- PS5 console check ---------- */
+
+const PS5_STATE_KEY = 'pawd.ps5.v1';
+const PS5_DEFAULT_CRITERIA = {
+  maxTemp: 75, minRpm: 0, maxPingMs: 100, maxLoss: 0, minGain: 3,
+  minWatts: 0, maxWatts: 0,
+};
+function ps5FreshState() {
+  return {
+    charge: null,
+    pairing: { events: [] },
+    ping: null,
+    thermal: [],
+    criteria: { ...PS5_DEFAULT_CRITERIA },
+  };
+}
+let ps5State = ps5FreshState();
+try {
+  const saved = JSON.parse(localStorage.getItem(PS5_STATE_KEY) || '{}') || {};
+  ps5State = Object.assign(ps5State, saved);
+  ps5State.criteria = Object.assign({ ...PS5_DEFAULT_CRITERIA }, saved.criteria || {});
+} catch (e) {
+  ps5State = ps5FreshState();
+}
+if (!Array.isArray(ps5State.thermal)) ps5State.thermal = [];
+if (!ps5State.pairing || !Array.isArray(ps5State.pairing.events)) {
+  ps5State.pairing = { events: [] };
+}
+let ps5Watcher = null;
+
+function savePs5State() {
+  try {
+    localStorage.setItem(PS5_STATE_KEY, JSON.stringify(ps5State));
+  } catch (e) {
+    // Storage is optional; results still appear in the report payload.
+  }
+}
+
+function ps5Set(el, text, cls) {
+  if (!el) return;
+  el.textContent = text;
+  el.className = `ps5-readout ${cls || 'muted'}`;
+}
+
+function setPs5Step(id, status, title) {
+  if (stepStatus('ps5', id) !== status) setStepStatus('ps5', id, status, title);
+}
+
+function ps5Stamp(at) {
+  return new Date(at).toLocaleTimeString();
+}
+
+function ps5Criteria() {
+  const saved = ps5State.criteria || {};
+  const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+  return {
+    maxTemp: Math.max(0, number(saved.maxTemp, PS5_DEFAULT_CRITERIA.maxTemp)),
+    minRpm: Math.max(0, number(saved.minRpm, 0)),
+    maxPingMs: Math.max(0, number(saved.maxPingMs, PS5_DEFAULT_CRITERIA.maxPingMs)),
+    maxLoss: Math.max(0, number(saved.maxLoss, 0)),
+    minGain: Math.max(0, number(saved.minGain, PS5_DEFAULT_CRITERIA.minGain)),
+    minWatts: Math.max(0, number(saved.minWatts, 0)),
+    maxWatts: Math.max(0, number(saved.maxWatts, 0)),
+  };
+}
+
+function ps5CriteriaSummary(c = ps5Criteria()) {
+  const power = c.maxWatts > 0
+    ? ` · charge power ${c.minWatts > 0 ? `${c.minWatts}–${c.maxWatts}` : `≤ ${c.maxWatts}`} W`
+    : c.minWatts > 0 ? ` · charge power ≥ ${c.minWatts} W` : '';
+  return `GOOD when temp ≤ ${c.maxTemp} °C` +
+    `${c.minRpm > 0 ? ` and fan ≥ ${c.minRpm} RPM` : ' (no fan minimum)'}` +
+    ` · ping ≤ ${c.maxPingMs} ms with ≤ ${c.maxLoss}% loss` +
+    ` · charge gain ≥ +${c.minGain}%` + power;
+}
+
+function ps5ChargeVerdict(r) {
+  const reasons = [];
+  if (r.delta >= r.minGain) reasons.push(`+${r.delta}% ≥ +${r.minGain}% minimum`);
+  else reasons.push(`+${r.delta}% < +${r.minGain}% minimum`);
+  return { good: r.delta >= r.minGain, reasons };
+}
+
+function ps5PingVerdict(p, c = ps5Criteria()) {
+  if (!p || p.reachable == null) return null;
+  const reasons = [];
+  if (!p.reachable) reasons.push('console did not answer ping');
+  if (p.lossPercent != null && p.lossPercent > c.maxLoss) {
+    reasons.push(`loss ${p.lossPercent}% > ${c.maxLoss}%`);
+  }
+  if (p.avgMs != null && p.avgMs > c.maxPingMs) {
+    reasons.push(`average ${p.avgMs} ms > ${c.maxPingMs} ms`);
+  }
+  return { good: reasons.length === 0, reasons };
+}
+
+function ps5ThermalVerdict(r, c = ps5Criteria()) {
+  const reasons = [];
+  if (r.tempC > c.maxTemp) reasons.push(`${r.tempC} °C > ${c.maxTemp} °C limit`);
+  if (r.rpm != null && c.minRpm > 0 && r.rpm < c.minRpm) {
+    reasons.push(`${r.rpm} RPM < ${c.minRpm} RPM minimum`);
+  }
+  return { good: reasons.length === 0, reasons };
+}
+
+function ps5VerdictText(v) {
+  if (!v) return 'UNKNOWN';
+  return v.good ? 'GOOD' : 'BAD';
+}
+
+function ps5LoadCriteriaInputs() {
+  const c = ps5Criteria();
+  if (ps5MaxTemp) ps5MaxTemp.value = c.maxTemp;
+  if (ps5MinRpm) ps5MinRpm.value = c.minRpm;
+  if (ps5MaxPingMs) ps5MaxPingMs.value = c.maxPingMs;
+  if (ps5MaxLoss) ps5MaxLoss.value = c.maxLoss;
+  if (ps5MinGain) ps5MinGain.value = c.minGain;
+}
+
+function ps5SaveCriteriaFromInputs() {
+  const values = [ps5MaxTemp, ps5MinRpm, ps5MaxPingMs, ps5MaxLoss, ps5MinGain]
+    .map(el => el ? Number(el.value) : NaN);
+  if (values.some(v => !Number.isFinite(v) || v < 0)) {
+    ps5Set(ps5CriteriaText, 'Enter a valid number (zero or more) in every limit.', 'warn');
+    return;
+  }
+  ps5State.criteria = {
+    maxTemp: values[0], minRpm: values[1], maxPingMs: values[2],
+    maxLoss: values[3], minGain: values[4],
+  };
+  savePs5State();
+  renderPs5();
+  addMarker(`PS5: criteria saved — ${ps5CriteriaSummary()}`);
+}
+
+function ps5RestoreDefaultCriteria() {
+  ps5State.criteria = { ...PS5_DEFAULT_CRITERIA };
+  ps5LoadCriteriaInputs();
+  savePs5State();
+  renderPs5();
+  addMarker('PS5: restored default pass criteria');
+}
+
+function renderPs5() {
+  if (!ps5Panel) return;
+  const c = ps5Criteria();
+  const parts = [];
+  let badCount = 0;
+
+  const custom = Object.keys(PS5_DEFAULT_CRITERIA).some(k => c[k] !== PS5_DEFAULT_CRITERIA[k]);
+  if (ps5CriteriaBadge) {
+    ps5CriteriaBadge.textContent = custom ? 'Custom limits' : 'Defaults';
+    ps5CriteriaBadge.className = custom ? '' : 'muted';
+  }
+  ps5Set(ps5CriteriaText, ps5CriteriaSummary(c));
+
+  const charge = ps5State.charge;
+  if (charge && charge.before) {
+    ps5Set(ps5ChargeBefore,
+      `Before: ${charge.before.percent}% · ${charge.before.precision || 'unknown precision'}` +
+      ` · ${charge.before.device || charge.before.source || 'unknown source'} · ${ps5Stamp(charge.before.at)}`);
+    parts.push('charge reading');
+  }
+  if (charge && charge.result) {
+    const r = charge.result;
+    const v = ps5ChargeVerdict(r);
+    if (!v.good) badCount += 1;
+    ps5Set(ps5ChargeAfter,
+      `${ps5VerdictText(v)}: ${r.before.percent}% → ${r.after.percent}%` +
+      ` (${r.delta >= 0 ? '+' : ''}${r.delta}% in ${(r.elapsedMs / 60000).toFixed(1)} min,` +
+      ` ${r.rate == null ? '—' : r.rate.toFixed(1)} %/min) · ${v.reasons.join('; ')}`,
+      v.good ? 'ok' : 'warn');
+    parts.push('charge result');
+  } else if (charge && charge.before) {
+    ps5Set(ps5ChargeAfter, 'Waiting for the finish reading after charging on the PS5.');
+  }
+
+  const events = ps5State.pairing.events || [];
+  ps5PairEvents.innerHTML = events.length
+    ? events.map(ev => `<div>${escapeHtml(ps5Stamp(ev.at))} — controller left PC: ${escapeHtml(ev.gone.join(', '))}</div>`).join('')
+    : 'No events recorded.';
+  if (!ps5Watcher) {
+    ps5Set(ps5PairStatus, events.length
+      ? `Handoff observed at ${ps5Stamp(events[events.length - 1].at)}.`
+      : 'Not watching.');
+  }
+  if (events.length) parts.push('pairing handoff');
+
+  const ping = ps5State.ping;
+  if (ping && ping.reachable != null) {
+    const v = ping.verdict || ps5PingVerdict(ping, c);
+    if (!v.good) badCount += 1;
+    ps5Set(ps5PingResult,
+      `${ps5VerdictText(v)}: ${ping.host}: ${ping.reachable ? 'reachable' : 'unreachable'}` +
+      ` · loss ${ping.lossPercent == null ? '—' : ping.lossPercent + '%'}` +
+      ` · avg ${ping.avgMs == null ? '—' : ping.avgMs + ' ms'}` +
+      ` · ${v.reasons.join('; ')}`,
+      v.good ? 'ok' : 'warn');
+    parts.push('ping');
+  }
+
+  const readings = ps5State.thermal;
+  if (readings.length) {
+    const temps = readings.map(r => r.tempC).filter(Number.isFinite);
+    const rpms = readings.map(r => r.rpm).filter(v => Number.isFinite(v));
+    const bad = readings.filter(r => !(r.verdict || ps5ThermalVerdict(r, c)).good).length;
+    badCount += bad;
+    const min = temps.length ? Math.min(...temps) : null;
+    const max = temps.length ? Math.max(...temps) : null;
+    ps5Set(ps5ThermalSummary,
+      `${readings.length} reading(s) · temp ${min ?? '—'}–${max ?? '—'} °C` +
+      ` · max fan ${rpms.length ? Math.max(...rpms) : '—'} RPM` +
+      ` · ${bad ? `${bad} BAD` : 'all GOOD'}`,
+      bad ? 'warn' : 'ok');
+    ps5ThermalList.innerHTML = readings.map(r => {
+      const v = r.verdict || ps5ThermalVerdict(r, c);
+      return `<div class="ps5-temp-row">
+        <span>${escapeHtml(ps5Stamp(r.at))} · ${escapeHtml(r.zone)} · ${escapeHtml(r.tempC)} °C</span>
+        <span>${r.rpm == null ? 'fan —' : `fan ${escapeHtml(r.rpm)} RPM`} ·
+          <strong style="color:${v.good ? '#4ade80' : '#f87171'}">${ps5VerdictText(v)}</strong>
+          ${v.reasons.length ? ` · ${escapeHtml(v.reasons.join('; '))}` : ''}
+          ${r.note ? ` · ${escapeHtml(r.note)}` : ''}</span>
+      </div>`;
+    }).join('');
+    parts.push(`${readings.length} thermal reading(s)`);
+  } else {
+    ps5Set(ps5ThermalSummary, 'No readings yet.');
+    ps5ThermalList.textContent = 'No readings yet.';
+  }
+
+  if (badCount) parts.push(`${badCount} BAD measurement(s)`);
+  ps5Badge.textContent = parts.length ? parts.join(' · ') : 'No readings yet';
+  ps5Badge.className = badCount ? 'warn' : parts.length ? '' : 'muted';
+}
+
+async function ps5SampleBattery() {
+  const body = {
+    index: Number(ps5Player.value) || 0,
+    source: ps5Source.value,
+  };
+  const res = await fetch('/api/controllers/battery/sample', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.available === false) {
+    throw new Error(data.error || data.note || 'No readable controller battery on this player/source');
+  }
+  if (data.percent == null) throw new Error('This controller/source does not report a battery percentage');
+  return data;
+}
+
+async function ps5ReadBefore() {
+  ps5BeforeBtn.disabled = true;
+  try {
+    const reading = await ps5SampleBattery();
+    ps5State.charge = { before: { ...reading, at: Date.now() }, result: null };
+    savePs5State();
+    renderPs5();
+    addMarker('PS5: recorded controller battery before charge');
+  } catch (e) {
+    ps5Set(ps5ChargeBefore, `Could not read battery: ${e.message}`, 'warn');
+  } finally {
+    ps5BeforeBtn.disabled = false;
+  }
+}
+
+async function ps5FinishCharge() {
+  ps5AfterBtn.disabled = true;
+  try {
+    if (!ps5State.charge || !ps5State.charge.before) {
+      throw new Error('Read the battery before charging first');
+    }
+    const after = await ps5SampleBattery();
+    const before = ps5State.charge.before;
+    const elapsedMs = Math.max(0, Date.now() - before.at);
+    const delta = after.percent - before.percent;
+    const minutes = elapsedMs / 60000;
+    const minGain = ps5Criteria().minGain;
+    const result = {
+      before, after, elapsedMs, delta,
+      rate: minutes > 0 ? delta / minutes : null,
+      minGain,
+      port: ps5Port.value,
+      passed: delta >= minGain,
+      at: Date.now(),
+    };
+    ps5State.charge.result = result;
+    savePs5State();
+    setPs5Step('usb-charge', result.passed ? 'pass' : 'fail', 'PS5 USB charging');
+    renderPs5();
+    addMarker(`PS5: charge ${result.passed ? 'passed' : 'failed'} (${delta}%)`);
+  } catch (e) {
+    ps5Set(ps5ChargeAfter, `Could not finish charge check: ${e.message}`, 'warn');
+  } finally {
+    ps5AfterBtn.disabled = false;
+  }
+}
+
+function ps5ControllerNames(data) {
+  return ((data && data.controllers) || [])
+    .map(c => c.name || c.instanceId || '')
+    .filter(Boolean);
+}
+
+async function ps5PollPairWatch() {
+  if (!ps5Watcher) return;
+  if (Date.now() >= ps5Watcher.until) {
+    ps5Set(ps5PairStatus, 'Watch timed out with no controller handoff detected.', 'warn');
+    stopPs5PairWatch();
+    return;
+  }
+  try {
+    const res = await fetch('/api/controllers', { cache: 'no-store' });
+    if (!res.ok) return;
+    const names = ps5ControllerNames(await res.json());
+    const gone = ps5Watcher.initial.filter(n => !names.includes(n));
+    if (gone.length) {
+      const ev = { at: Date.now(), gone, remaining: names };
+      ps5State.pairing.events.push(ev);
+      savePs5State();
+      setPs5Step('pairing', 'pass', 'PS5 pairing handoff');
+      stopPs5PairWatch();
+      ps5Set(ps5PairStatus, `Handoff observed at ${ps5Stamp(ev.at)}.`, 'ok');
+      renderPs5();
+      addMarker('PS5: controller handoff observed');
+      return;
+    }
+    ps5Set(ps5PairStatus,
+      `Watching… ${names.length} controller(s) still on PC · ${Math.ceil((ps5Watcher.until - Date.now()) / 1000)}s left`);
+  } catch (e) {
+    ps5Set(ps5PairStatus, `Watch error: ${e.message}`, 'warn');
+  }
+}
+
+function startPs5PairWatch() {
+  fetch('/api/controllers', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : {})
+    .then(data => {
+      const initial = ps5ControllerNames(data);
+      if (!initial.length) {
+        ps5Set(ps5PairStatus, 'No controllers detected on this PC. Connect one by USB first, then start the watch.', 'warn');
+        return;
+      }
+      ps5Watcher = { initial, until: Date.now() + 120000, timer: null };
+      ps5PairWatchBtn.disabled = true;
+      ps5PairStopBtn.disabled = false;
+      ps5Watcher.timer = setInterval(ps5PollPairWatch, 1000);
+      ps5PollPairWatch();
+      addMarker('PS5: started pairing handoff watch');
+    })
+    .catch(e => ps5Set(ps5PairStatus, `Could not start watch: ${e.message}`, 'warn'));
+}
+
+function stopPs5PairWatch() {
+  if (!ps5Watcher) return;
+  clearInterval(ps5Watcher.timer);
+  ps5Watcher = null;
+  ps5PairWatchBtn.disabled = false;
+  ps5PairStopBtn.disabled = true;
+  if (!ps5State.pairing.events.length) ps5Set(ps5PairStatus, 'Watch stopped.');
+}
+
+async function ps5Ping() {
+  const host = ps5Host.value.trim();
+  if (!host) {
+    ps5Set(ps5PingResult, 'Enter the PS5 hostname or IP address first.', 'warn');
+    return;
+  }
+  ps5PingBtn.disabled = true;
+  try {
+    const res = await fetch('/api/ps5/ping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Ping request failed');
+    const verdict = ps5PingVerdict(data);
+    ps5State.ping = { ...data, verdict, criteria: ps5Criteria(), at: Date.now() };
+    savePs5State();
+    setPs5Step('network', verdict.good ? 'pass' : 'fail', 'PS5 LAN ping');
+    renderPs5();
+    addMarker(`PS5: ping ${data.host} ${data.reachable ? 'reachable' : 'unreachable'}`);
+  } catch (e) {
+    ps5Set(ps5PingResult, `Ping failed: ${e.message}`, 'warn');
+  } finally {
+    ps5PingBtn.disabled = false;
+  }
+}
+
+function ps5AddThermal() {
+  const tempC = Number.parseFloat(ps5TempC.value);
+  if (!Number.isFinite(tempC)) {
+    ps5Set(ps5ThermalSummary, 'Enter a temperature in °C.', 'warn');
+    return;
+  }
+  const rpm = ps5FanRpm.value === '' ? null : Number(ps5FanRpm.value);
+  const fanRpm = Number.isFinite(rpm) ? rpm : null;
+  const c = ps5Criteria();
+  const verdict = ps5ThermalVerdict({ tempC, rpm: fanRpm }, c);
+  ps5State.thermal.push({
+    at: Date.now(),
+    zone: ps5TempZone.value,
+    tempC,
+    rpm: fanRpm,
+    note: ps5ThermalNote.value.trim(),
+    criteria: c,
+    verdict,
+    status: verdict.good ? 'pass' : 'fail',
+  });
+  savePs5State();
+  ps5TempC.value = '';
+  ps5FanRpm.value = '';
+  ps5ThermalNote.value = '';
+  const allGood = ps5State.thermal.every(r => r.good);
+  setPs5Step('thermal', allGood ? 'pass' : 'fail', 'PS5 thermal readings');
+  renderPs5();
+  addMarker(`PS5: thermal ${ps5TempZone.value} ${tempC}°C ${allGood ? 'GOOD' : `BAD (${verdict.reasons.join('; ')})`}`);
+}
+
+function ps5ClearThermal() {
+  ps5State.thermal = [];
+  delete stepState[stepKey('ps5', 'thermal')];
+  savePs5State();
+  renderWalkthrough();
+  renderPs5();
+  addMarker('PS5: cleared thermal readings');
+}
+
+if (ps5BeforeBtn) ps5BeforeBtn.addEventListener('click', ps5ReadBefore);
+if (ps5AfterBtn) ps5AfterBtn.addEventListener('click', ps5FinishCharge);
+if (ps5PairWatchBtn) ps5PairWatchBtn.addEventListener('click', startPs5PairWatch);
+if (ps5PairStopBtn) ps5PairStopBtn.addEventListener('click', stopPs5PairWatch);
+if (ps5PingBtn) ps5PingBtn.addEventListener('click', ps5Ping);
+if (ps5ThermalAddBtn) ps5ThermalAddBtn.addEventListener('click', ps5AddThermal);
+if (ps5ThermalClearBtn) ps5ThermalClearBtn.addEventListener('click', ps5ClearThermal);
+if (ps5SaveCriteria) ps5SaveCriteria.addEventListener('click', ps5SaveCriteriaFromInputs);
+if (ps5ResetCriteria) ps5ResetCriteria.addEventListener('click', ps5RestoreDefaultCriteria);
+
+/* ---------- Shared console check engine (Switch profiles) ---------- */
+
+const CONSOLE_CHECK_META = {
+  switch1: {
+    panelId: 'switch1Panel',
+    title: 'Nintendo Switch console check',
+    intro: 'A retail Switch does not expose internal temperature or fan telemetry to a PC. Pawd observes controller handoff, USB charging, and LAN reachability, and logs readings you take yourself.',
+    ports: ['Dock USB-A', 'Console USB-C', 'Dock bottom USB-C'],
+    pairing: true,
+    pairingLabel: 'Joy-Con',
+    pairStepId: 'joycon',
+    pairingHint: 'Start watching, then detach or pair the Joy-Con to the Switch. Pawd records when they disappear from Windows.',
+    pingLabel: 'Switch hostname/IP',
+    pingHint: 'Wired LAN requires the dock; otherwise use the console Wi-Fi address.',
+    zones: ['CPU', 'GPU', 'Exhaust', 'Intake', 'Other'],
+    powerMeter: true,
+  },
+  switchlite: {
+    panelId: 'switchLitePanel',
+    title: 'Switch Lite console check',
+    intro: 'The Switch Lite is handheld-only with integrated controls, no TV dock, no detachable Joy-Con, and no wired LAN dock. Pawd can check USB-C charging, Wi-Fi reachability, and manual thermal readings.',
+    ports: ['Console USB-C'],
+    pairing: false,
+    pairingLabel: null,
+    pairStepId: null,
+    pairingHint: '',
+    pingLabel: 'Switch Lite hostname/IP',
+    pingHint: 'Switch Lite has no Ethernet port; enter its Wi-Fi address.',
+    zones: ['CPU', 'GPU', 'Exhaust', 'Chassis', 'Other'],
+    powerMeter: true,
+  },
+  switch2: {
+    panelId: 'switch2Panel',
+    title: 'Switch 2 console check',
+    intro: 'Switch 2 has two USB-C ports, a dock with wired LAN, and magnetic Joy-Con 2. Pawd observes Joy-Con handoff, charging, and LAN reachability; thermal values are entered manually.',
+    ports: ['Bottom USB-C (dock/charge)', 'Top USB-C (accessory)', 'Dock USB-A'],
+    pairing: true,
+    pairingLabel: 'Joy-Con 2',
+    pairStepId: 'joycon2',
+    pairingHint: 'Start watching, then detach or pair the Joy-Con 2 to the Switch 2. Pawd records when they disappear from Windows.',
+    pingLabel: 'Switch 2 hostname/IP',
+    pingHint: 'Use the dock Ethernet address or the Wi-Fi 6 address of the console.',
+    zones: ['CPU', 'GPU', 'Exhaust', 'Intake', 'Other'],
+    powerMeter: true,
+  },
+};
+
+const consoleStates = {};
+const consoleWatchers = {};
+const viewConsoleEl = document.getElementById('viewConsole');
+
+function freshConsoleState() {
+  return {
+    charge: null,
+    pairing: { events: [] },
+    ping: null,
+    power: [],
+    thermal: [],
+    criteria: { ...PS5_DEFAULT_CRITERIA },
+  };
+}
+
+function consoleState(id) {
+  if (!consoleStates[id]) {
+    let state = freshConsoleState();
+    try {
+      const saved = JSON.parse(localStorage.getItem(`pawd.console.${id}.v1`) || '{}') || {};
+      state = Object.assign(state, saved);
+      state.criteria = Object.assign({ ...PS5_DEFAULT_CRITERIA }, saved.criteria || {});
+    } catch (e) {
+      state = freshConsoleState();
+    }
+    if (!Array.isArray(state.thermal)) state.thermal = [];
+    if (!Array.isArray(state.power)) state.power = [];
+    if (!state.pairing || !Array.isArray(state.pairing.events)) state.pairing = { events: [] };
+    consoleStates[id] = state;
+  }
+  return consoleStates[id];
+}
+
+function saveConsoleState(id) {
+  try {
+    localStorage.setItem(`pawd.console.${id}.v1`, JSON.stringify(consoleState(id)));
+  } catch (e) {
+    // Storage is optional; values still appear in the report.
+  }
+}
+
+function consolePanel(id) {
+  const meta = CONSOLE_CHECK_META[id];
+  return meta ? document.getElementById(meta.panelId) : null;
+}
+
+function consoleEl(id, role) {
+  const panel = consolePanel(id);
+  return panel ? panel.querySelector(`[data-role="${role}"]`) : null;
+}
+
+function consoleSet(el, text, cls) {
+  if (!el) return;
+  el.textContent = text;
+  el.className = `ps5-readout ${cls || 'muted'}`;
+}
+
+function consoleCriteria(id) {
+  const saved = consoleState(id).criteria || {};
+  const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+  return {
+    maxTemp: Math.max(0, number(saved.maxTemp, PS5_DEFAULT_CRITERIA.maxTemp)),
+    minRpm: Math.max(0, number(saved.minRpm, 0)),
+    maxPingMs: Math.max(0, number(saved.maxPingMs, PS5_DEFAULT_CRITERIA.maxPingMs)),
+    maxLoss: Math.max(0, number(saved.maxLoss, 0)),
+    minGain: Math.max(0, number(saved.minGain, PS5_DEFAULT_CRITERIA.minGain)),
+    minWatts: Math.max(0, number(saved.minWatts, 0)),
+    maxWatts: Math.max(0, number(saved.maxWatts, 0)),
+  };
+}
+
+function consoleCriteriaSummary(c) {
+  return ps5CriteriaSummary(c);
+}
+
+function consolePowerVerdict(r, c) {
+  const watts = Number(r && r.watts);
+  if (!Number.isFinite(watts)) return null;
+  const reasons = [];
+  if (c.minWatts > 0 && watts < c.minWatts) {
+    reasons.push(`${watts} W < ${c.minWatts} W minimum`);
+  }
+  if (c.maxWatts > 0 && watts > c.maxWatts) {
+    reasons.push(`${watts} W > ${c.maxWatts} W limit`);
+  }
+  return { good: reasons.length === 0, reasons };
+}
+
+function consoleLoadCriteriaInputs(id) {
+  const c = consoleCriteria(id);
+  const values = {
+    'max-temp': c.maxTemp, 'min-rpm': c.minRpm, 'max-ping': c.maxPingMs,
+    'max-loss': c.maxLoss, 'min-gain': c.minGain,
+  };
+  if (CONSOLE_CHECK_META[id].powerMeter) {
+    values['min-watts'] = c.minWatts;
+    values['max-watts'] = c.maxWatts;
+  }
+  Object.entries(values).forEach(([role, value]) => {
+    const el = consoleEl(id, role);
+    if (el) el.value = value;
+  });
+}
+
+function consoleSaveCriteria(id) {
+  const roles = ['max-temp', 'min-rpm', 'max-ping', 'max-loss', 'min-gain'];
+  const values = roles.map(role => {
+    const el = consoleEl(id, role);
+    return el ? Number(el.value) : NaN;
+  });
+  let minWatts = 0;
+  let maxWatts = 0;
+  if (CONSOLE_CHECK_META[id].powerMeter) {
+    const minEl = consoleEl(id, 'min-watts');
+    const maxEl = consoleEl(id, 'max-watts');
+    minWatts = minEl ? Number(minEl.value) : 0;
+    maxWatts = maxEl ? Number(maxEl.value) : 0;
+    if (!Number.isFinite(minWatts) || !Number.isFinite(maxWatts) || minWatts < 0 || maxWatts < 0) {
+      consoleSet(consoleEl(id, 'criteria-text'), 'Enter a valid watt limit (zero or more).', 'warn');
+      return;
+    }
+  }
+  if (values.some(v => !Number.isFinite(v) || v < 0)) {
+    consoleSet(consoleEl(id, 'criteria-text'), 'Enter a valid number (zero or more) in every limit.', 'warn');
+    return;
+  }
+  consoleState(id).criteria = {
+    maxTemp: values[0], minRpm: values[1], maxPingMs: values[2],
+    maxLoss: values[3], minGain: values[4], minWatts, maxWatts,
+  };
+  saveConsoleState(id);
+  renderConsoleCheck(id);
+  addMarker(`${CONSOLE_CHECK_META[id].title}: criteria saved — ${consoleCriteriaSummary(consoleCriteria(id))}`);
+}
+
+function consoleResetCriteria(id) {
+  consoleState(id).criteria = { ...PS5_DEFAULT_CRITERIA };
+  consoleLoadCriteriaInputs(id);
+  saveConsoleState(id);
+  renderConsoleCheck(id);
+  addMarker(`${CONSOLE_CHECK_META[id].title}: restored default pass criteria`);
+}
+
+function setConsoleStep(id, stepId, status, title) {
+  if (stepStatus(id, stepId) !== status) setStepStatus(id, stepId, status, title);
+}
+
+function syncConsoleChargeStep(id) {
+  const state = consoleState(id);
+  const checks = [];
+  if (state.charge && state.charge.result) checks.push(state.charge.result.passed !== false);
+  if ((state.power || []).length) {
+    const c = consoleCriteria(id);
+    checks.push(state.power.every(r => {
+      const v = r.verdict || consolePowerVerdict(r, c);
+      return !!v && v.good;
+    }));
+  }
+  if (!checks.length) return;
+  const pass = checks.every(Boolean);
+  setConsoleStep(id, 'charge', pass ? 'pass' : 'fail', `${CONSOLE_CHECK_META[id].title} charging`);
+}
+
+function renderConsoleCheck(id) {
+  const meta = CONSOLE_CHECK_META[id];
+  const panel = consolePanel(id);
+  if (!meta || !panel) return;
+  const state = consoleState(id);
+  const c = consoleCriteria(id);
+  const parts = [];
+  let badCount = 0;
+
+  const custom = Object.keys(PS5_DEFAULT_CRITERIA).some(k => c[k] !== PS5_DEFAULT_CRITERIA[k]);
+  const criteriaBadge = consoleEl(id, 'criteria-badge');
+  if (criteriaBadge) {
+    criteriaBadge.textContent = custom ? 'Custom limits' : 'Defaults';
+    criteriaBadge.className = custom ? '' : 'muted';
+  }
+  consoleSet(consoleEl(id, 'criteria-text'), consoleCriteriaSummary(c));
+
+  if (state.charge && state.charge.before) {
+    consoleSet(consoleEl(id, 'charge-before-out'),
+      `Before: ${state.charge.before.percent}% · ${state.charge.before.precision || 'unknown precision'}` +
+      ` · ${state.charge.before.device || state.charge.before.source || 'unknown source'} · ${ps5Stamp(state.charge.before.at)}`);
+    parts.push('charge reading');
+  }
+  if (state.charge && state.charge.result) {
+    const r = state.charge.result;
+    const v = ps5ChargeVerdict(r);
+    if (!v.good) badCount += 1;
+    consoleSet(consoleEl(id, 'charge-after-out'),
+      `${ps5VerdictText(v)}: ${r.before.percent}% → ${r.after.percent}%` +
+      ` (${r.delta >= 0 ? '+' : ''}${r.delta}% in ${(r.elapsedMs / 60000).toFixed(1)} min,` +
+      ` ${r.rate == null ? '—' : r.rate.toFixed(1)} %/min) · ${v.reasons.join('; ')}`,
+      v.good ? 'ok' : 'warn');
+    parts.push('charge result');
+  } else if (state.charge && state.charge.before) {
+    consoleSet(consoleEl(id, 'charge-after-out'), 'Waiting for the finish reading after charging on the console.');
+  }
+
+  if (meta.powerMeter) {
+    const powerReadings = state.power || [];
+    if (powerReadings.length) {
+      const watts = powerReadings.map(r => Number(r.watts)).filter(Number.isFinite);
+      const bad = powerReadings.filter(r => !(r.verdict || consolePowerVerdict(r, c) || {}).good).length;
+      badCount += bad;
+      const min = watts.length ? Math.min(...watts) : null;
+      const max = watts.length ? Math.max(...watts) : null;
+      consoleSet(consoleEl(id, 'power-summary'),
+        `${powerReadings.length} reading(s) · ${min ?? '—'}–${max ?? '—'} W` +
+        ` · ${bad ? `${bad} BAD` : 'all GOOD'}`,
+        bad ? 'warn' : 'ok');
+      const list = consoleEl(id, 'power-list');
+      if (list) {
+        list.innerHTML = powerReadings.map(r => {
+          const v = r.verdict || consolePowerVerdict(r, c);
+          return `<div class="ps5-temp-row">
+            <span>${escapeHtml(ps5Stamp(r.at))} · ${escapeHtml(r.port || 'USB port')} · ${escapeHtml(r.watts)} W</span>
+            <span>${r.volts == null ? 'V —' : `${escapeHtml(r.volts)} V`} · ${r.amps == null ? 'A —' : `${escapeHtml(r.amps)} A`} ·
+              <strong style="color:${v && v.good ? '#4ade80' : '#f87171'}">${ps5VerdictText(v)}</strong>
+              ${v && v.reasons.length ? ` · ${escapeHtml(v.reasons.join('; '))}` : ''}
+              ${r.note ? ` · ${escapeHtml(r.note)}` : ''}</span>
+          </div>`;
+        }).join('');
+      }
+      parts.push(`${powerReadings.length} charge power reading(s)`);
+    } else {
+      consoleSet(consoleEl(id, 'power-summary'), 'No readings yet.');
+      const list = consoleEl(id, 'power-list');
+      if (list) list.textContent = 'No readings yet.';
+    }
+  }
+
+  const events = state.pairing.events || [];
+  const eventsEl = consoleEl(id, 'pair-events');
+  if (eventsEl) {
+    eventsEl.innerHTML = events.length
+      ? events.map(ev => `<div>${escapeHtml(ps5Stamp(ev.at))} — controller left PC: ${escapeHtml(ev.gone.join(', '))}</div>`).join('')
+      : 'No events recorded.';
+  }
+  if (!consoleWatchers[id]) {
+    consoleSet(consoleEl(id, 'pair-status'), events.length
+      ? `Handoff observed at ${ps5Stamp(events[events.length - 1].at)}.`
+      : 'Not watching.');
+  }
+  if (events.length) parts.push('pairing handoff');
+
+  const ping = state.ping;
+  if (ping && ping.reachable != null) {
+    const v = ping.verdict || ps5PingVerdict(ping, c);
+    if (!v.good) badCount += 1;
+    consoleSet(consoleEl(id, 'ping-out'),
+      `${ps5VerdictText(v)}: ${ping.host}: ${ping.reachable ? 'reachable' : 'unreachable'}` +
+      ` · loss ${ping.lossPercent == null ? '—' : ping.lossPercent + '%'}` +
+      ` · avg ${ping.avgMs == null ? '—' : ping.avgMs + ' ms'}` +
+      ` · ${v.reasons.join('; ')}`,
+      v.good ? 'ok' : 'warn');
+    parts.push('ping');
+  }
+
+  const readings = state.thermal;
+  if (readings.length) {
+    const temps = readings.map(r => r.tempC).filter(Number.isFinite);
+    const rpms = readings.map(r => r.rpm).filter(v => Number.isFinite(v));
+    const bad = readings.filter(r => !(r.verdict || ps5ThermalVerdict(r, c)).good).length;
+    badCount += bad;
+    const min = temps.length ? Math.min(...temps) : null;
+    const max = temps.length ? Math.max(...temps) : null;
+    consoleSet(consoleEl(id, 'thermal-summary'),
+      `${readings.length} reading(s) · temp ${min ?? '—'}–${max ?? '—'} °C` +
+      ` · max fan ${rpms.length ? Math.max(...rpms) : '—'} RPM` +
+      ` · ${bad ? `${bad} BAD` : 'all GOOD'}`,
+      bad ? 'warn' : 'ok');
+    const list = consoleEl(id, 'thermal-list');
+    if (list) {
+      list.innerHTML = readings.map(r => {
+        const v = r.verdict || ps5ThermalVerdict(r, c);
+        return `<div class="ps5-temp-row">
+          <span>${escapeHtml(ps5Stamp(r.at))} · ${escapeHtml(r.zone)} · ${escapeHtml(r.tempC)} °C</span>
+          <span>${r.rpm == null ? 'fan —' : `fan ${escapeHtml(r.rpm)} RPM`} ·
+            <strong style="color:${v.good ? '#4ade80' : '#f87171'}">${ps5VerdictText(v)}</strong>
+            ${v.reasons.length ? ` · ${escapeHtml(v.reasons.join('; '))}` : ''}
+            ${r.note ? ` · ${escapeHtml(r.note)}` : ''}</span>
+        </div>`;
+      }).join('');
+    }
+    parts.push(`${readings.length} thermal reading(s)`);
+  } else {
+    consoleSet(consoleEl(id, 'thermal-summary'), 'No readings yet.');
+    const list = consoleEl(id, 'thermal-list');
+    if (list) list.textContent = 'No readings yet.';
+  }
+
+  if (badCount) parts.push(`${badCount} BAD measurement(s)`);
+  const badge = consoleEl(id, 'badge');
+  if (badge) {
+    badge.textContent = parts.length ? parts.join(' · ') : 'No readings yet';
+    badge.className = badCount ? 'warn' : parts.length ? '' : 'muted';
+  }
+}
+
+async function consoleSampleBattery(id) {
+  const player = consoleEl(id, 'player');
+  const source = consoleEl(id, 'source');
+  const body = {
+    index: Number(player && player.value) || 0,
+    source: source ? source.value : 'auto',
+  };
+  const res = await fetch('/api/controllers/battery/sample', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.available === false) {
+    throw new Error(data.error || data.note || 'No readable controller battery on this player/source');
+  }
+  if (data.percent == null) throw new Error('This controller/source does not report a battery percentage');
+  return data;
+}
+
+async function consoleReadBefore(id) {
+  const btn = consoleEl(id, 'charge-before');
+  if (btn) btn.disabled = true;
+  try {
+    const reading = await consoleSampleBattery(id);
+    consoleState(id).charge = { before: { ...reading, at: Date.now() }, result: null };
+    saveConsoleState(id);
+    renderConsoleCheck(id);
+    addMarker(`${CONSOLE_CHECK_META[id].title}: recorded controller battery before charge`);
+  } catch (e) {
+    consoleSet(consoleEl(id, 'charge-before-out'), `Could not read battery: ${e.message}`, 'warn');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function consoleFinishCharge(id) {
+  const btn = consoleEl(id, 'charge-after');
+  if (btn) btn.disabled = true;
+  try {
+    const state = consoleState(id);
+    if (!state.charge || !state.charge.before) throw new Error('Read the battery before charging first');
+    const after = await consoleSampleBattery(id);
+    const before = state.charge.before;
+    const elapsedMs = Math.max(0, Date.now() - before.at);
+    const delta = after.percent - before.percent;
+    const minutes = elapsedMs / 60000;
+    const minGain = consoleCriteria(id).minGain;
+    const portEl = consoleEl(id, 'port');
+    const result = {
+      before, after, elapsedMs, delta,
+      rate: minutes > 0 ? delta / minutes : null,
+      minGain,
+      port: portEl ? portEl.value : null,
+      passed: delta >= minGain,
+      at: Date.now(),
+    };
+    state.charge.result = result;
+    saveConsoleState(id);
+    syncConsoleChargeStep(id);
+    renderConsoleCheck(id);
+    addMarker(`${CONSOLE_CHECK_META[id].title}: charge ${result.passed ? 'GOOD' : 'BAD'} (${delta}%)`);
+  } catch (e) {
+    consoleSet(consoleEl(id, 'charge-after-out'), `Could not finish charge check: ${e.message}`, 'warn');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function consolePollPairWatch(id) {
+  const watcher = consoleWatchers[id];
+  if (!watcher) return;
+  if (Date.now() >= watcher.until) {
+    consoleSet(consoleEl(id, 'pair-status'), 'Watch timed out with no controller handoff detected.', 'warn');
+    consoleStopPairWatch(id);
+    return;
+  }
+  try {
+    const res = await fetch('/api/controllers', { cache: 'no-store' });
+    if (!res.ok) return;
+    const names = ps5ControllerNames(await res.json());
+    const gone = watcher.initial.filter(n => !names.includes(n));
+    if (gone.length) {
+      const ev = { at: Date.now(), gone, remaining: names };
+      consoleState(id).pairing.events.push(ev);
+      saveConsoleState(id);
+      const meta = CONSOLE_CHECK_META[id];
+      if (meta.pairStepId) setConsoleStep(id, meta.pairStepId, 'pass', `${meta.title} pairing handoff`);
+      consoleStopPairWatch(id);
+      consoleSet(consoleEl(id, 'pair-status'), `Handoff observed at ${ps5Stamp(ev.at)}.`, 'ok');
+      renderConsoleCheck(id);
+      addMarker(`${meta.title}: ${meta.pairingLabel || 'controller'} handoff observed`);
+      return;
+    }
+    consoleSet(consoleEl(id, 'pair-status'),
+      `Watching… ${names.length} controller(s) still on PC · ${Math.ceil((watcher.until - Date.now()) / 1000)}s left`);
+  } catch (e) {
+    consoleSet(consoleEl(id, 'pair-status'), `Watch error: ${e.message}`, 'warn');
+  }
+}
+
+function consoleStartPairWatch(id) {
+  const meta = CONSOLE_CHECK_META[id];
+  if (!meta.pairing) return;
+  fetch('/api/controllers', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : {})
+    .then(data => {
+      const initial = ps5ControllerNames(data);
+      if (!initial.length) {
+        consoleSet(consoleEl(id, 'pair-status'),
+          `No controllers detected on this PC. Connect a ${meta.pairingLabel || 'controller'} first, then start the watch.`, 'warn');
+        return;
+      }
+      consoleWatchers[id] = { initial, until: Date.now() + 120000, timer: null };
+      const watchBtn = consoleEl(id, 'pair-watch');
+      const stopBtn = consoleEl(id, 'pair-stop');
+      if (watchBtn) watchBtn.disabled = true;
+      if (stopBtn) stopBtn.disabled = false;
+      consoleWatchers[id].timer = setInterval(() => consolePollPairWatch(id), 1000);
+      consolePollPairWatch(id);
+      addMarker(`${meta.title}: started pairing handoff watch`);
+    })
+    .catch(e => consoleSet(consoleEl(id, 'pair-status'), `Could not start watch: ${e.message}`, 'warn'));
+}
+
+function consoleStopPairWatch(id) {
+  const watcher = consoleWatchers[id];
+  if (!watcher) return;
+  clearInterval(watcher.timer);
+  delete consoleWatchers[id];
+  const watchBtn = consoleEl(id, 'pair-watch');
+  const stopBtn = consoleEl(id, 'pair-stop');
+  if (watchBtn) watchBtn.disabled = false;
+  if (stopBtn) stopBtn.disabled = true;
+  if (!consoleState(id).pairing.events.length) {
+    consoleSet(consoleEl(id, 'pair-status'), 'Watch stopped.');
+  }
+}
+
+async function consolePing(id) {
+  const hostEl = consoleEl(id, 'host');
+  const host = hostEl ? hostEl.value.trim() : '';
+  if (!host) {
+    consoleSet(consoleEl(id, 'ping-out'), 'Enter the console hostname or IP address first.', 'warn');
+    return;
+  }
+  const btn = consoleEl(id, 'ping');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/api/ps5/ping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Ping request failed');
+    const verdict = ps5PingVerdict(data, consoleCriteria(id));
+    consoleState(id).ping = { ...data, verdict, criteria: consoleCriteria(id), at: Date.now() };
+    saveConsoleState(id);
+    setConsoleStep(id, 'network', verdict.good ? 'pass' : 'fail', `${CONSOLE_CHECK_META[id].title} LAN ping`);
+    renderConsoleCheck(id);
+    addMarker(`${CONSOLE_CHECK_META[id].title}: ping ${data.host} ${ps5VerdictText(verdict)}`);
+  } catch (e) {
+    consoleSet(consoleEl(id, 'ping-out'), `Ping failed: ${e.message}`, 'warn');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function consoleAddThermal(id) {
+  const tempEl = consoleEl(id, 'temp');
+  const tempC = Number.parseFloat(tempEl ? tempEl.value : '');
+  if (!Number.isFinite(tempC)) {
+    consoleSet(consoleEl(id, 'thermal-summary'), 'Enter a temperature in °C.', 'warn');
+    return;
+  }
+  const rpmEl = consoleEl(id, 'rpm');
+  const rpm = rpmEl && rpmEl.value !== '' ? Number(rpmEl.value) : null;
+  const fanRpm = Number.isFinite(rpm) ? rpm : null;
+  const c = consoleCriteria(id);
+  const verdict = ps5ThermalVerdict({ tempC, rpm: fanRpm }, c);
+  const zoneEl = consoleEl(id, 'zone');
+  const noteEl = consoleEl(id, 'note');
+  consoleState(id).thermal.push({
+    at: Date.now(),
+    zone: zoneEl ? zoneEl.value : 'Other',
+    tempC,
+    rpm: fanRpm,
+    note: noteEl ? noteEl.value.trim() : '',
+    criteria: c,
+    verdict,
+    status: verdict.good ? 'pass' : 'fail',
+  });
+  saveConsoleState(id);
+  if (tempEl) tempEl.value = '';
+  if (rpmEl) rpmEl.value = '';
+  if (noteEl) noteEl.value = '';
+  const allGood = consoleState(id).thermal.every(r => {
+    const v = r.verdict || ps5ThermalVerdict(r, consoleCriteria(id));
+    return v.good;
+  });
+  setConsoleStep(id, 'thermal', allGood ? 'pass' : 'fail', `${CONSOLE_CHECK_META[id].title} thermal readings`);
+  renderConsoleCheck(id);
+  addMarker(`${CONSOLE_CHECK_META[id].title}: thermal ${zoneEl ? zoneEl.value : 'Other'} ${tempC}°C ${allGood ? 'GOOD' : `BAD (${verdict.reasons.join('; ')})`}`);
+}
+
+function consoleClearThermal(id) {
+  consoleState(id).thermal = [];
+  delete stepState[stepKey(id, 'thermal')];
+  saveStepState();
+  saveConsoleState(id);
+  renderWalkthrough();
+  renderConsoleCheck(id);
+  addMarker(`${CONSOLE_CHECK_META[id].title}: cleared thermal readings`);
+}
+
+function consoleAddPower(id) {
+  const wattsEl = consoleEl(id, 'watts');
+  const voltsEl = consoleEl(id, 'volts');
+  const ampsEl = consoleEl(id, 'amps');
+  let watts = Number.parseFloat(wattsEl ? wattsEl.value : '');
+  const volts = voltsEl && voltsEl.value !== '' ? Number(voltsEl.value) : null;
+  const amps = ampsEl && ampsEl.value !== '' ? Number(ampsEl.value) : null;
+  if (!Number.isFinite(watts) && Number.isFinite(volts) && Number.isFinite(amps)) {
+    watts = volts * amps;
+  }
+  if (!Number.isFinite(watts) || watts < 0) {
+    consoleSet(consoleEl(id, 'power-summary'), 'Enter the meter watt reading (or both volts and amps).', 'warn');
+    return;
+  }
+  const c = consoleCriteria(id);
+  const verdict = consolePowerVerdict({ watts }, c);
+  const portEl = consoleEl(id, 'power-port');
+  const noteEl = consoleEl(id, 'power-note');
+  consoleState(id).power.push({
+    at: Date.now(),
+    port: portEl ? portEl.value : 'USB port',
+    watts,
+    volts: Number.isFinite(volts) ? volts : null,
+    amps: Number.isFinite(amps) ? amps : null,
+    note: noteEl ? noteEl.value.trim() : '',
+    criteria: c,
+    verdict,
+    status: verdict.good ? 'pass' : 'fail',
+  });
+  saveConsoleState(id);
+  if (wattsEl) wattsEl.value = '';
+  if (voltsEl) voltsEl.value = '';
+  if (ampsEl) ampsEl.value = '';
+  if (noteEl) noteEl.value = '';
+  syncConsoleChargeStep(id);
+  renderConsoleCheck(id);
+  addMarker(`${CONSOLE_CHECK_META[id].title}: charge power ${watts} W ${ps5VerdictText(verdict)}` +
+    `${verdict.reasons.length ? ` (${verdict.reasons.join('; ')})` : ''}`);
+}
+
+function consoleClearPower(id) {
+  consoleState(id).power = [];
+  syncConsoleChargeStep(id);
+  saveConsoleState(id);
+  renderConsoleCheck(id);
+  addMarker(`${CONSOLE_CHECK_META[id].title}: cleared charge power readings`);
+}
+
+function consolePanelHtml(id, meta) {
+  const ports = meta.ports.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  const zones = meta.zones.map(z => `<option value="${escapeHtml(z)}">${escapeHtml(z)}</option>`).join('');
+  const powerBlock = meta.powerMeter
+    ? `<div class="ps5-block">
+        <div class="panel-head"><h3>Charge power log (USB meter readings)</h3></div>
+        <p class="muted">Enter watt readings from your USB-C power meter. Optional volts and amps are recorded for traceability; if watts is blank, Pawd calculates watts from volts × amps.</p>
+        <div class="ps5-controls">
+          <label>Console port <select data-role="power-port">${ports}</select></label>
+          <label>Watts <input type="number" data-role="watts" min="0" max="100" step="0.1" placeholder="e.g. 15.2" /></label>
+          <label>Volts <input type="number" data-role="volts" min="0" max="30" step="0.01" placeholder="optional" /></label>
+          <label>Amps <input type="number" data-role="amps" min="0" max="10" step="0.01" placeholder="optional" /></label>
+          <label>Note <input type="text" data-role="power-note" placeholder=" handheld / docked / idle" /></label>
+          <button type="button" data-action="power-add" data-role="power-add">Add reading</button>
+          <button type="button" class="secondary" data-action="power-clear" data-role="power-clear">Clear</button>
+        </div>
+        <div data-role="power-summary" class="ps5-readout muted">No readings yet.</div>
+        <div data-role="power-list" class="ps5-events muted">No readings yet.</div>
+      </div>`
+    : '';
+  const powerCriteriaHtml = meta.powerMeter
+    ? `<label>Min charge W <input type="number" data-role="min-watts" min="0" max="100" step="0.1" value="0" /></label>
+       <label>Max charge W <input type="number" data-role="max-watts" min="0" max="100" step="0.1" value="0" /></label>`
+    : '';
+  const pairingBlock = meta.pairing
+    ? `<div class="ps5-block">
+        <h3>${escapeHtml(meta.pairingLabel)} handoff</h3>
+        <p class="muted">${escapeHtml(meta.pairingHint)}</p>
+        <div class="ps5-controls">
+          <button type="button" data-action="pair-watch" data-role="pair-watch">Watch for handoff</button>
+          <button type="button" class="secondary" data-action="pair-stop" data-role="pair-stop" disabled>Stop watching</button>
+        </div>
+        <div data-role="pair-status" class="ps5-readout muted">Not watching.</div>
+        <div data-role="pair-events" class="ps5-events muted">No events recorded.</div>
+      </div>`
+    : `<div class="ps5-block">
+        <h3>Integrated controls</h3>
+        <p class="muted">Switch Lite controls are built in. There is no detachable controller handoff to observe; use the walkthrough to mark each input.</p>
+      </div>`;
+  return `<section class="panel hidden" id="${meta.panelId}" data-console="${id}">
+    <div class="panel-head">
+      <h2>${escapeHtml(meta.title)}</h2>
+      <span data-role="badge" class="muted">No readings yet</span>
+    </div>
+    <p class="muted">${escapeHtml(meta.intro)}</p>
+    <div class="ps5-grid">
+      <div class="ps5-block">
+        <h3>USB charging check</h3>
+        <p class="muted">Read a controller battery on this PC, charge through the selected console USB port, then reconnect and read again.</p>
+        <div class="ps5-controls">
+          <label>Player
+            <select data-role="player">
+              <option value="0">1</option><option value="1">2</option>
+              <option value="2">3</option><option value="3">4</option>
+            </select>
+          </label>
+          <label>Source
+            <select data-role="source">
+              <option value="auto">Auto</option>
+              <option value="dinput">DirectInput</option>
+              <option value="xinput">XInput</option>
+              <option value="demo">Demo</option>
+            </select>
+          </label>
+          <label>Console port <select data-role="port">${ports}</select></label>
+          <label>Minutes <input type="number" data-role="minutes" min="1" max="180" step="1" value="15" /></label>
+          <button type="button" data-action="charge-before" data-role="charge-before">Read before</button>
+          <button type="button" class="secondary" data-action="charge-after" data-role="charge-after">Finish &amp; calculate</button>
+        </div>
+        <div data-role="charge-before-out" class="ps5-readout muted">No before reading yet.</div>
+        <div data-role="charge-after-out" class="ps5-readout muted">No charge result yet.</div>
+      </div>
+      ${pairingBlock}
+      <div class="ps5-block">
+        <h3>LAN reachability</h3>
+        <p class="muted">${escapeHtml(meta.pingHint)}</p>
+        <div class="ps5-controls">
+          <label>${escapeHtml(meta.pingLabel)} <input type="text" data-role="host" placeholder="192.168.1.50" /></label>
+          <button type="button" data-action="ping" data-role="ping">Ping</button>
+        </div>
+        <div data-role="ping-out" class="ps5-readout muted">No ping result yet.</div>
+      </div>
+    </div>
+    <div class="ps5-block">
+      <div class="panel-head"><h3>Temperature &amp; fan log (manual readings)</h3></div>
+      <p class="muted">Enter readings taken with your own thermometer, thermal camera, or fan tachometer. Each value is labelled GOOD or BAD against the limits below.</p>
+      <div class="ps5-controls">
+        <label>Zone <select data-role="zone">${zones}</select></label>
+        <label>Temp °C <input type="number" data-role="temp" min="0" max="150" step="0.1" placeholder="e.g. 45" /></label>
+        <label>Fan RPM <input type="number" data-role="rpm" min="0" max="20000" step="1" placeholder="optional" /></label>
+        <label>Note <input type="text" data-role="note" placeholder="idle / gaming / docked" /></label>
+        <button type="button" data-action="thermal-add" data-role="thermal-add">Add reading</button>
+        <button type="button" class="secondary" data-action="thermal-clear" data-role="thermal-clear">Clear</button>
+      </div>
+      <div data-role="thermal-summary" class="ps5-readout muted">No readings yet.</div>
+      <div data-role="thermal-list" class="ps5-events muted">No readings yet.</div>
+    </div>
+    ${powerBlock}
+    <div class="ps5-block">
+      <div class="panel-head">
+        <h3>Good vs bad — pass criteria</h3>
+        <span data-role="criteria-badge" class="muted">Defaults</span>
+      </div>
+      <p class="muted">Every measurement is labelled GOOD or BAD against these editable limits, with the reason shown. Defaults are starting points, not official Nintendo specifications. Set a watt limit to 0 to disable it.</p>
+      <div class="ps5-controls">
+        <label>Max temp °C <input type="number" data-role="max-temp" min="0" max="150" step="1" value="75" /></label>
+        <label>Min fan RPM <input type="number" data-role="min-rpm" min="0" max="20000" step="1" value="0" /></label>
+        <label>Max ping ms <input type="number" data-role="max-ping" min="0" max="5000" step="1" value="100" /></label>
+        <label>Max loss % <input type="number" data-role="max-loss" min="0" max="100" step="1" value="0" /></label>
+        <label>Min charge gain % <input type="number" data-role="min-gain" min="0" max="100" step="1" value="3" /></label>
+        ${powerCriteriaHtml}
+        <button type="button" data-action="save-criteria" data-role="save-criteria">Save criteria</button>
+        <button type="button" class="secondary" data-action="reset-criteria" data-role="reset-criteria">Reset defaults</button>
+      </div>
+      <div data-role="criteria-text" class="ps5-readout muted">No criteria saved yet.</div>
+    </div>
+  </section>`;
+}
+
+function buildConsolePanels() {
+  if (!viewConsoleEl) return;
+  Object.entries(CONSOLE_CHECK_META).forEach(([id, meta]) => {
+    if (document.getElementById(meta.panelId)) return;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = consolePanelHtml(id, meta).trim();
+    if (wrapper.firstElementChild) viewConsoleEl.appendChild(wrapper.firstElementChild);
+  });
+  Object.keys(CONSOLE_CHECK_META).forEach(consoleLoadCriteriaInputs);
+}
+
+if (viewConsoleEl) {
+  viewConsoleEl.addEventListener('click', event => {
+    const btn = event.target.closest('[data-action]');
+    if (!btn) return;
+    const panel = btn.closest('[data-console]');
+    if (!panel) return;
+    const id = panel.dataset.console;
+    if (!CONSOLE_CHECK_META[id]) return;
+    switch (btn.dataset.action) {
+      case 'charge-before': consoleReadBefore(id); break;
+      case 'charge-after': consoleFinishCharge(id); break;
+      case 'pair-watch': consoleStartPairWatch(id); break;
+      case 'pair-stop': consoleStopPairWatch(id); break;
+      case 'ping': consolePing(id); break;
+      case 'thermal-add': consoleAddThermal(id); break;
+      case 'thermal-clear': consoleClearThermal(id); break;
+      case 'power-add': consoleAddPower(id); break;
+      case 'power-clear': consoleClearPower(id); break;
+      case 'save-criteria': consoleSaveCriteria(id); break;
+      case 'reset-criteria': consoleResetCriteria(id); break;
+      default: break;
+    }
+  });
+}
+
 async function setControllerDemo(enabled) {
   controllerDemoToggle.disabled = true;
   try {
@@ -1658,8 +3258,9 @@ async function collectReportData() {
     asJson('/api/controllers/battery', null),
   ]);
 
+  const walkthroughCategories = ['android', 'controller', ...Object.keys(consoleProfiles)];
   const walkthroughs = {};
-  ['android', 'controller'].forEach(cat => {
+  walkthroughCategories.forEach(cat => {
     walkthroughs[cat] = stepSets[cat].steps.map(s => ({
       id: s.id,
       title: s.title,
@@ -1667,7 +3268,7 @@ async function collectReportData() {
       status: stepStatus(cat, s.id),
     }));
   });
-  const all = [...walkthroughs.android, ...walkthroughs.controller];
+  const all = walkthroughCategories.flatMap(cat => walkthroughs[cat]);
   const pass = all.filter(s => s.status === 'pass').length;
   const fail = all.filter(s => s.status === 'fail').length;
   const skip = all.filter(s => s.status === 'skip').length;
@@ -1734,6 +3335,25 @@ async function collectReportData() {
         source: s.source, precision: s.precision, device: s.device,
       })),
     } : null,
+    ps5: {
+      charge: ps5State.charge || null,
+      pairing: ps5State.pairing || { events: [] },
+      ping: ps5State.ping || null,
+      thermal: ps5State.thermal || [],
+      criteria: ps5Criteria(),
+    },
+    consoles: Object.fromEntries(Object.keys(CONSOLE_CHECK_META).map(id => {
+      const state = consoleState(id);
+      return [id, {
+        label: CONSOLE_CHECK_META[id].title,
+        charge: state.charge || null,
+        pairing: state.pairing || { events: [] },
+        ping: state.ping || null,
+        power: state.power || [],
+        thermal: state.thermal || [],
+        criteria: consoleCriteria(id),
+      }];
+    })),
     summary: { total: all.length, pass, fail, skip, notTested, overall },
   };
 }
@@ -1745,6 +3365,85 @@ function reportStatusBadge(status) {
 
 function reportDeviceRow(label, value) {
   return `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value == null || value === '' ? '—' : value)}</td></tr>`;
+}
+
+function buildConsoleReportHtml(id, state, title) {
+  const events = (state.pairing && state.pairing.events) || [];
+  const readings = state.thermal || [];
+  const powerReadings = state.power || [];
+  if (!state.charge && !state.ping && !events.length && !readings.length && !powerReadings.length) return '';
+  const criteria = state.criteria || {};
+  const verdictText = v => v && v.good ? 'GOOD' : v ? 'BAD' : 'UNKNOWN';
+  const powerLimit = criteria.maxWatts > 0
+    ? ` · charge power ≤ ${criteria.maxWatts} W` : criteria.minWatts > 0
+      ? ` · charge power ≥ ${criteria.minWatts} W` : '';
+  const rows = [reportDeviceRow('Pass criteria',
+    `GOOD when temp ≤ ${criteria.maxTemp ?? '—'} °C` +
+    `${criteria.minRpm ? ` and fan ≥ ${criteria.minRpm} RPM` : ' (no fan minimum)'}` +
+    ` · ping ≤ ${criteria.maxPingMs ?? '—'} ms · loss ≤ ${criteria.maxLoss ?? '—'}%` +
+    ` · charge gain ≥ +${criteria.minGain ?? '—'}%` + powerLimit)];
+  if (state.charge && state.charge.before) {
+    rows.push(reportDeviceRow('Battery before',
+      `${state.charge.before.percent}% (${state.charge.before.precision || 'unknown'}), ${new Date(state.charge.before.at).toLocaleString()}`));
+    rows.push(reportDeviceRow('Console port', state.charge.result ? state.charge.result.port : '—'));
+  }
+  if (state.charge && state.charge.result) {
+    const r = state.charge.result;
+    const v = ps5ChargeVerdict(r);
+    rows.push(reportDeviceRow('Battery after', `${r.after.percent}% (${r.after.precision || 'unknown'})`));
+    rows.push(reportDeviceRow('Charge gain',
+      `${r.delta >= 0 ? '+' : ''}${r.delta}% in ${(r.elapsedMs / 60000).toFixed(1)} min` +
+      ` (${r.rate == null ? '—' : r.rate.toFixed(1)} %/min) — ${verdictText(v)} (${v.reasons.join('; ')})`));
+  }
+  if (state.ping) {
+    const v = state.ping.verdict || ps5PingVerdict(state.ping, criteria);
+    rows.push(reportDeviceRow('LAN ping',
+      `${state.ping.host}: ${state.ping.reachable ? 'reachable' : 'unreachable'}` +
+      `, loss ${state.ping.lossPercent == null ? '—' : state.ping.lossPercent + '%'}` +
+      `, avg ${state.ping.avgMs == null ? '—' : state.ping.avgMs + ' ms'}` +
+      ` — ${verdictText(v)} (${v ? v.reasons.join('; ') : 'no verdict'})`));
+  }
+  if (events.length) {
+    rows.push(reportDeviceRow('Pairing handoff', events.map(ev =>
+      `${new Date(ev.at).toLocaleTimeString()} — ${ev.gone.join(', ')}`).join('; ')));
+  }
+  const thermalRows = readings.map(r => {
+    const v = r.verdict || ps5ThermalVerdict(r, criteria);
+    const used = r.criteria || {};
+    return `<tr>
+      <td>${escapeHtml(new Date(r.at).toLocaleString())}</td>
+      <td>${escapeHtml(r.zone)}</td>
+      <td>${escapeHtml(r.tempC)} °C (limit ${escapeHtml(used.maxTemp ?? r.limit)})</td>
+      <td>${r.rpm == null ? '—' : `${escapeHtml(r.rpm)} RPM (min ${escapeHtml(used.minRpm ?? r.minRpm ?? 0)})`}</td>
+      <td>${escapeHtml(r.note || '')}</td>
+      <td>${escapeHtml(v.reasons.join('; ') || 'within limits')}</td>
+      <td>${verdictText(v)}</td>
+    </tr>`;
+  }).join('');
+  const thermalTable = thermalRows
+    ? `<h4>Manual temperature / fan readings</h4>
+       <table><thead><tr><th>Time</th><th>Zone</th><th>Temperature</th><th>Fan</th><th>Note</th><th>Why</th><th>Result</th></tr></thead><tbody>${thermalRows}</tbody></table>`
+    : '';
+  const powerTableRows = powerReadings.map(r => {
+    const v = r.verdict || consolePowerVerdict(r, criteria);
+    return `<tr>
+      <td>${escapeHtml(new Date(r.at).toLocaleString())}</td>
+      <td>${escapeHtml(r.port || 'USB port')}</td>
+      <td>${escapeHtml(r.watts)} W</td>
+      <td>${r.volts == null ? '—' : `${escapeHtml(r.volts)} V`}</td>
+      <td>${r.amps == null ? '—' : `${escapeHtml(r.amps)} A`}</td>
+      <td>${escapeHtml(r.note || '')}</td>
+      <td>${escapeHtml(v ? v.reasons.join('; ') : 'no reading')}</td>
+      <td>${verdictText(v)}</td>
+    </tr>`;
+  }).join('');
+  const powerTable = powerTableRows
+    ? `<h4>USB charge power meter readings</h4>
+       <table><thead><tr><th>Time</th><th>Port</th><th>Power</th><th>Volts</th><th>Amps</th><th>Note</th><th>Why</th><th>Result</th></tr></thead><tbody>${powerTableRows}</tbody></table>`
+    : '';
+  return `<h3>${escapeHtml(title)}</h3>
+    <p class="rpt-muted">Console telemetry is not exposed to a PC; values below are from PC-side observation or manual meter entry.</p>
+    <table>${rows.join('')}</table>${thermalTable}${powerTable}`;
 }
 
 function buildReportHtml(data) {
@@ -1784,8 +3483,9 @@ function buildReportHtml(data) {
       reportDeviceRow('Instance ID', selected.instanceId)
     : '<tr><td colspan="2" class="rpt-muted">No device was selected in the UI.</td></tr>';
 
-  const walkthroughHtml = ['android', 'controller'].map(cat => {
-    const title = cat === 'android' ? 'Android phone' : 'Game controllers';
+  const walkthroughHtml = ['android', 'controller', ...Object.keys(consoleProfiles)].map(cat => {
+    const title = cat === 'android' ? 'Android phone'
+      : cat === 'controller' ? 'Game controllers' : consoleProfiles[cat].label;
     const steps = data.walkthroughs[cat];
     const rows = steps.map(st => `<tr>
         <td class="rpt-status">${reportStatusBadge(st.status)}</td>
@@ -1827,6 +3527,72 @@ function buildReportHtml(data) {
       ? `<table><thead><tr><th>Time</th><th>Level</th><th>State</th><th>Source</th><th>Precision</th></tr></thead><tbody>${rows}</tbody></table>`
       : '<p class="rpt-muted">No battery samples were recorded.</p>');
   }
+
+  const ps5 = data.ps5 || {};
+  let ps5Html = '<p class="rpt-muted">No PS5 console checks were recorded in this session.</p>';
+  const handoffEvents = (ps5.pairing && ps5.pairing.events) || [];
+  const thermalReadings = ps5.thermal || [];
+  const criteria = ps5.criteria || {};
+  const verdictText = v => v && v.good ? 'GOOD' : v ? 'BAD' : 'UNKNOWN';
+  if (ps5.charge || ps5.ping || handoffEvents.length || thermalReadings.length || Object.keys(criteria).length) {
+    const rows = [];
+    rows.push(reportDeviceRow('Pass criteria',
+      `GOOD when temp ≤ ${criteria.maxTemp ?? '—'} °C` +
+      `${criteria.minRpm ? ` and fan ≥ ${criteria.minRpm} RPM` : ' (no fan minimum)'}` +
+      ` · ping ≤ ${criteria.maxPingMs ?? '—'} ms · loss ≤ ${criteria.maxLoss ?? '—'}%` +
+      ` · charge gain ≥ +${criteria.minGain ?? '—'}%`));
+    const charge = ps5.charge;
+    if (charge && charge.before) {
+      rows.push(reportDeviceRow('Battery before',
+        `${charge.before.percent}% (${charge.before.precision || 'unknown'}), ${new Date(charge.before.at).toLocaleString()}`));
+      rows.push(reportDeviceRow('Console port', charge.result ? charge.result.port : '—'));
+    }
+    if (charge && charge.result) {
+      const r = charge.result;
+      const v = ps5ChargeVerdict(r);
+      rows.push(reportDeviceRow('Battery after', `${r.after.percent}% (${r.after.precision || 'unknown'})`));
+      rows.push(reportDeviceRow('Charge gain',
+        `${r.delta >= 0 ? '+' : ''}${r.delta}% in ${(r.elapsedMs / 60000).toFixed(1)} min` +
+        ` (${r.rate == null ? '—' : r.rate.toFixed(1)} %/min) — ${verdictText(v)} (${v.reasons.join('; ')})`));
+    }
+    if (ps5.ping) {
+      const v = ps5.ping.verdict || ps5PingVerdict(ps5.ping, criteria);
+      rows.push(reportDeviceRow('LAN ping',
+        `${ps5.ping.host}: ${ps5.ping.reachable ? 'reachable' : 'unreachable'}` +
+        `, loss ${ps5.ping.lossPercent == null ? '—' : ps5.ping.lossPercent + '%'}` +
+        `, avg ${ps5.ping.avgMs == null ? '—' : ps5.ping.avgMs + ' ms'}` +
+        ` — ${verdictText(v)} (${v ? v.reasons.join('; ') : 'no verdict'})`));
+    }
+    if (handoffEvents.length) {
+      rows.push(reportDeviceRow('Pairing handoff', handoffEvents.map(ev =>
+        `${new Date(ev.at).toLocaleTimeString()} — ${ev.gone.join(', ')}`).join('; ')));
+    }
+    const thermalRows = thermalReadings.map(r => {
+      const v = r.verdict || ps5ThermalVerdict(r, criteria);
+      const used = r.criteria || {};
+      return `<tr>
+        <td>${escapeHtml(new Date(r.at).toLocaleString())}</td>
+        <td>${escapeHtml(r.zone)}</td>
+        <td>${escapeHtml(r.tempC)} °C (limit ${escapeHtml(used.maxTemp ?? r.limit)})</td>
+        <td>${r.rpm == null ? '—' : `${escapeHtml(r.rpm)} RPM (min ${escapeHtml(used.minRpm ?? r.minRpm ?? 0)})`}</td>
+        <td>${escapeHtml(r.note || '')}</td>
+        <td>${escapeHtml(v.reasons.join('; ') || 'within limits')}</td>
+        <td>${verdictText(v)}</td>
+      </tr>`;
+    }).join('');
+    const thermalTable = thermalRows
+      ? `<h3>Manual temperature / fan readings</h3>
+         <table><thead><tr><th>Time</th><th>Zone</th><th>Temperature</th><th>Fan</th><th>Note</th><th>Why</th><th>Result</th></tr></thead><tbody>${thermalRows}</tbody></table>`
+      : '';
+    ps5Html = `<p class="rpt-muted">A retail PS5 does not expose internal telemetry; values below are from PC-side observation or manual entry.</p>
+      <table>${rows.join('') || '<tr><td class="rpt-muted">No measurable results.</td></tr>'}</table>${thermalTable}`;
+  }
+
+  const consoleSections = Object.entries(data.consoles || {}).map(([id, state]) =>
+    buildConsoleReportHtml(id, state, (state && state.label) || consoleProfiles[id]?.label || id));
+  const consoleHtml = consoleSections.filter(Boolean).join('')
+    ? `<h2>Nintendo Switch consoles</h2>${consoleSections.filter(Boolean).join('')}`
+    : '<h2>Nintendo Switch consoles</h2><p class="rpt-muted">No Switch console checks were recorded in this session.</p>';
 
   const recordRows = data.recordings.length
     ? data.recordings.map(r => {
@@ -1922,6 +3688,11 @@ function buildReportHtml(data) {
 
   <h2>Battery test</h2>
   ${batteryHtml}
+
+  <h2>PS5 console check</h2>
+  ${ps5Html}
+
+  ${consoleHtml}
 
   <h2>Session notes</h2>
   <div class="rpt-notes">${escapeHtml(data.session.notes || 'No notes recorded.')}</div>
@@ -2169,7 +3940,12 @@ async function loadVersion() {
 }
 
 loadVersion();
+buildConsolePanels();
+ps5LoadCriteriaInputs();
+applyConsoleProfile();
 renderWalkthrough();
+renderPs5();
+Object.keys(CONSOLE_CHECK_META).forEach(renderConsoleCheck);
 switchTab('android');
 switchView('app');
 if (window.location.hash === '#battery') jumpToBatteryPanel();
