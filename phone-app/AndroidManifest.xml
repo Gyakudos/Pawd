@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.pawd.selftest"
-    android:versionCode="1"
-    android:versionName="1.0">
+    android:versionCode="3"
+    android:versionName="001.002.001.2026">
 
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36" />
 
@@ -53,6 +53,7 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".ControllerTestActivity" android:exported="false" android:label="@string/test_controllers" />
         <activity android:name=".TouchTestActivity" android:exported="false" android:label="@string/test_touch" />
         <activity android:name=".DisplayTestActivity" android:exported="false" android:label="@string/test_display" />
         <activity android:name=".AudioTestActivity" android:exported="false" android:label="@string/test_audio" />

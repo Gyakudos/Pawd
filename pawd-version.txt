@@ -14,11 +14,11 @@ VSVersionInfo(
       StringTable('040904B0', [
         StringStruct('CompanyName', 'Gyakudos'),
         StringStruct('FileDescription', 'Pawd Device Test App'),
-        StringStruct('FileVersion', '001.001.000.2026'),
+        StringStruct('FileVersion', '001.002.001.2026'),
         StringStruct('InternalName', 'pawd'),
         StringStruct('OriginalFilename', 'pawd.exe'),
         StringStruct('ProductName', 'Pawd'),
-        StringStruct('ProductVersion', '001.001.000.2026')
+        StringStruct('ProductVersion', '001.002.001.2026')
       ])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])

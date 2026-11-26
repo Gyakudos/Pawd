@@ -14,11 +14,14 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
     private static final String[] ALL_IDS = {
-            "touch", "display", "audio", "camera", "biometric",
+            "controllers", "touch", "display", "audio", "camera", "biometric",
             "sensors", "vibration", "buttons", "location", "system"
     };
 
     private static final TestDef[] TESTS = {
+            new TestDef("controllers", "Game controllers",
+                    "Detect USB/Bluetooth gamepads and watch every button, stick, and trigger live. Includes a 10s stick drift check.",
+                    ControllerTestActivity.class),
             new TestDef("touch", "Touchscreen & multitouch",
                     "Draw across the grid with one or more fingers. Check edges and gesture coverage.",
                     TouchTestActivity.class),

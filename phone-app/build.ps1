@@ -57,14 +57,14 @@ Write-Host "Linking APK resources..."
     --manifest (Join-Path $Root "AndroidManifest.xml") `
     -R $ResZip --java $Gen `
     --min-sdk-version 26 --target-sdk-version 36 `
-    --version-code 1 --version-name "1.0" --auto-add-overlay
+    --version-code 3 --version-name "001.002.001.2026" --auto-add-overlay
 if ($LASTEXITCODE -ne 0) { throw "aapt2 link failed" }
 
 Write-Host "Compiling Java sources..."
 $rJava = Join-Path $Gen "com\pawd\selftest\R.java"
 $sources = @(Get-ChildItem (Join-Path $Root "java") -Recurse -Filter *.java |
     ForEach-Object { $_.FullName })
-$javacArgs = @("--release", "11", "-encoding", "UTF-8", "-classpath", $AndroidJar,
+$javacArgs = @("--release", "11", "-Xlint:none", "-encoding", "UTF-8", "-classpath", $AndroidJar,
     "-d", $Classes, $rJava) + $sources
 & javac @javacArgs
 if ($LASTEXITCODE -ne 0) { throw "javac failed" }

@@ -57,7 +57,7 @@ PLATFORM_TOOLS_DIR = TOOLS_DIR / "platform-tools"
 LOCAL_ADB = PLATFORM_TOOLS_DIR / ("adb.exe" if os.name == "nt" else "adb")
 ADB_ZIP_URL = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
 
-APP_VERSION = "001.001.000.2026"  # Major.Minor.Sub.Year
+APP_VERSION = "001.002.001.2026"  # Major.Minor.Sub.Year
 PHONE_PACKAGE = "com.pawd.selftest"
 PHONE_ACTIVITY = f"{PHONE_PACKAGE}/.MainActivity"
 PHONE_APK = STATIC_DIR / "pawd-selftest.apk"

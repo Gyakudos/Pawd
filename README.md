@@ -1,6 +1,6 @@
 # Pawd — PC Device Test App
 
-**Version:** `001.001.000.2026` (Major.Minor.Sub.Year) · **Repository:** https://github.com/Gyakudos/Pawd
+**Version:** `001.002.001.2026` (Major.Minor.Sub.Year) · **Repository:** https://github.com/Gyakudos/Pawd
 
 A local PC application for detecting plugged-in devices and running guided test walkthroughs.
 The current release covers **Android phones** (with a companion on-phone self-test app installed over ADB)
@@ -283,24 +283,37 @@ Reports are stored in `dist\reports\pawd-report-<timestamp>.html` with a `.json`
 The generated HTML is fully self-contained (inline CSS, no external scripts or fonts). Recording links
 point back to the running Pawd server, so keep it running when viewing a report with video links.
 
-## Build the on-phone test app
+## Build the Android app
+
+The Android app is controller-first. It detects USB and Bluetooth gamepads through Android's
+`InputDevice` API and shows live, deadzone-free button, stick, trigger, and D-pad values. It also
+stores stick center and runs a 10-second hands-off drift check with a GOOD/BAD result. The existing
+touch, display, audio, camera, biometric, sensor, vibration, hardware-key, location, and system
+checks remain in the same app.
 
 The phone app has no Gradle dependency and builds directly with the Android SDK build tools
 (`aapt2`, `javac`, `d8`, `zipalign`, `apksigner`).
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "phone-app\build.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "phone-app\build.ps1" `
+  -Out "dist\pawd-android-001.002.001.2026.apk"
 ```
 
 Defaults:
 - SDK: `F:\dev\android-sdk` (override with `-Sdk`)
 - Output: `static\pawd-selftest.apk` (override with `-Out`)
 - Debug keystore: `phone-app\debug.keystore` (created on first build)
+- App label: **Pawd**; version `001.002.001.2026` (version code 3)
+
+Install the signed APK with `adb install -r <apk>`; no root is required. Android exposes paired
+Bluetooth and recognized USB controllers to apps through input events, so no special USB permission
+is needed to test them. PC-only Pawd features (XInput/DirectInput, PS5/Switch console charging, and
+PnP inspection) remain in the Windows app.
 
 ## How it works
 
 - `server.py` serves the frontend from `static/` and exposes:
-  - `GET /api/version` — application version (`001.001.000.2026`)
+  - `GET /api/version` — application version (`001.002.001.2026`)
   - `GET /api/devices` — PnP/USB device list plus ADB status
   - `POST /api/adb/install` — download and extract Android Platform Tools locally
   - `GET /api/phone/status` — ADB state, connected serial, whether the phone app is installed/running, APK availability

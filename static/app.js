@@ -193,7 +193,7 @@ Object.keys(stepState).forEach(k => {
   else if (stepState[k] === false || stepState[k] == null) delete stepState[k];
 });
 const sessionStartedAt = Date.now();
-let appVersion = '001.001.000.2026';
+let appVersion = '001.002.001.2026';
 
 const stepSets = {
   android: {
